@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from time import time
 import os
 import random
+import argparse
 from models.get_model import get_model
 from pytorch_lightning import Trainer, loggers, seed_everything
 from pytorch_lightning.callbacks import LearningRateLogger
@@ -31,14 +32,14 @@ class CoolSystem(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self(x)
-        loss = F.cross_entropy(y_hat, y)
+        loss = torch.nn.functional.cross_entropy(y_hat, y)
         tensorboard_logs = {'train_loss': loss}
         return {'loss': loss, 'log': tensorboard_logs}
 
     def validation_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self(x)
-        loss = F.cross_entropy(y_hat, y)
+        loss = torch.nn.functional.cross_entropy(y_hat, y)
         labels_hat = torch.argmax(y_hat, dim=1)
         val_acc = torch.sum(y == labels_hat).item() / (len(y) * 1.0)
         val_acc = torch.tensor(val_acc)
@@ -64,20 +65,20 @@ class CoolSystem(pl.LightningModule):
                                               transforms.RandomHorizontalFlip(),
                                               transforms.ToTensor(),
                                               transforms.Normalize(self.mean, self.std)])
-        if self.dataset == 'CIFAR10'
-            dataset = datasets.CIFAR10(root=os.getcwd(), train=True, transform=transform_train,)
-        elif self.dataset == 'CIFAR100'
-            dataset = datasets.CIFAR100(root=os.getcwd(), train=True, transform=transform_train,)
+        if self.dataset == 'CIFAR10':
+            dataset = datasets.CIFAR10(root=os.getcwd(), train=True, transform=transform_train, download = True)
+        elif self.dataset == 'CIFAR100':
+            dataset = datasets.CIFAR100(root=os.getcwd(), train=True, transform=transform_train, download = True)
         dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=8, shuffle=True, drop_last=True, pin_memory=True)
         return dataloader
     
     def val_dataloader(self):
         transform_val = transforms.Compose([transforms.ToTensor(),
                                             transforms.Normalize(self.mean, self.std)])
-        if self.dataset == 'CIFAR10'
-            dataset = datasets.CIFAR10(root=os.getcwd(), train=False, transform=transform_val,)
-        elif self.dataset == 'CIFAR100'
-            dataset = datasets.CIFAR100(root=os.getcwd(), train=False, transform=transform_val,)
+        if self.dataset == 'CIFAR10':
+            dataset = datasets.CIFAR10(root=os.getcwd(), train=False, transform=transform_val, download = True)
+        elif self.dataset == 'CIFAR100':
+            dataset = datasets.CIFAR100(root=os.getcwd(), train=False, transform=transform_val, download = True)
         dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=8, pin_memory=True)
         return dataloader
 
@@ -90,15 +91,15 @@ def parse_args():
     parser.add_argument("--epochs", type=int, default=200)
     return parser.parse_args()    
 
-if name=='__main__':
+if __name__=='__main__':
     args = parse_args()
     model = get_model(args.model_name, args.num_classes)
     system = CoolSystem(model, args.dataset)
-    model_parameters = filter(lambda p: p.requires_grad, model.model.parameters())
+    model_parameters = filter(lambda p: p.requires_grad, system.model.parameters())
     params = sum([np.prod(p.size()) for p in model_parameters])
     log_name = args.model_name + '_' + args.dataset + '_params=' + str(int(params))
     lr_logger = LearningRateLogger()
     checkpoint_callback = ModelCheckpoint(monitor='val_acc') if args.save_weights else False
-    logger = loggers.TensorBoardLogger("final_logs", name=log_name, version=1)
+    logger = loggers.TensorBoardLogger("logs", name=log_name, version=1)
     trainer = Trainer(default_root_dir='weights/', callbacks = [lr_logger], gpus=1, max_epochs=args.epochs, deterministic=True, gradient_clip_val=1, logger=logger, checkpoint_callback=args.save_weights)
-    trainer.fit(model)
+    trainer.fit(system)

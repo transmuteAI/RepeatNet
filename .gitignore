@@ -130,3 +130,7 @@ dmypy.json
 
 # weights folder
 .weights/
+.logs/
+cifar-10-python.tar.gz
+cifar-10-batches-py/
+cifar-100-python/
