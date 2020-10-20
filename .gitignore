@@ -129,8 +129,8 @@ dmypy.json
 .pyre/
 
 # weights folder
-.weights/
-.logs/
+weights/
+logs/
 cifar-10-python.tar.gz
 cifar-10-batches-py/
 cifar-100-python/

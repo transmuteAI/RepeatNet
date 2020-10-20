@@ -11,7 +11,7 @@ import random
 import argparse
 from models.get_model import get_model
 from pytorch_lightning import Trainer, loggers, seed_everything
-from pytorch_lightning.callbacks import LearningRateLogger
+# from pytorch_lightning.callbacks import LearningRateLogger
 seed_everything(42)
 
 import pytorch_lightning as pl
@@ -93,13 +93,23 @@ def parse_args():
 
 if __name__=='__main__':
     args = parse_args()
+    
+    if not os.path.exists('logs'):
+        os.mkdir('logs')
+
+    if not os.path.exists('weights'):
+        os.mkdir('weights')
+        
     model = get_model(args.model_name, args.num_classes)
     system = CoolSystem(model, args.dataset)
+    
     model_parameters = filter(lambda p: p.requires_grad, system.model.parameters())
     params = sum([np.prod(p.size()) for p in model_parameters])
+    
     log_name = args.model_name + '_' + args.dataset + '_params=' + str(int(params))
-    lr_logger = LearningRateLogger()
+#     lr_logger = LearningRateLogger()
     checkpoint_callback = ModelCheckpoint(monitor='val_acc') if args.save_weights else False
     logger = loggers.TensorBoardLogger("logs", name=log_name, version=1)
-    trainer = Trainer(default_root_dir='weights/', callbacks = [lr_logger], gpus=1, max_epochs=args.epochs, deterministic=True, gradient_clip_val=1, logger=logger, checkpoint_callback=args.save_weights)
+    
+    trainer = Trainer(default_root_dir='weights/', gpus=1, max_epochs=args.epochs, deterministic=True, gradient_clip_val=1, logger=logger, checkpoint_callback=args.save_weights)
     trainer.fit(system)
