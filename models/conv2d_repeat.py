@@ -65,7 +65,7 @@ class Conv2dRepeat(nn.Module):
         return x
 
     def repeat(self, weights):
-        if do_repeat:
+        if self.do_repeat:
             weights = weights.repeat((self.r0, self.r1,1,1))
             weights = weights.permute(2,3,0,1)
             weights = self.unfold(weights)
