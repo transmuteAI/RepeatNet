@@ -9,6 +9,7 @@ class Conv2dRepeat(nn.Module):
         
         self.ooc, self.oic, self.ok1, self.ok2 = original_weight_shape
         self.roc, self.ric, self.rk1, self.rk2 = repeated_weight_shape
+        self.do_repeat = False if original_weight_shape==repeated_weight_shape else True
         self.stride = stride
         self.padding = padding
         self.conv_type = conv_type
@@ -63,12 +64,13 @@ class Conv2dRepeat(nn.Module):
         return x
 
     def repeat(self, weights):
-        weights = weights.repeat((self.r0, self.r1,1,1))
-        weights = weights.permute(2,3,0,1)
-        weights = self.unfold(weights)
-        weights = weights.reshape(-1,self.r1*self.r0)
-        weights = self.activation(weights)
-        weights = weights.reshape(self.ok1, -1, self.r1*self.r0)
-        weights = self.fold(weights)
-        weights = weights.permute(2,3,0,1)
+        if do_repeat:
+            weights = weights.repeat((self.r0, self.r1,1,1))
+            weights = weights.permute(2,3,0,1)
+            weights = self.unfold(weights)
+            weights = weights.reshape(-1,self.r1*self.r0)
+            weights = self.activation(weights)
+            weights = weights.reshape(self.ok1, -1, self.r1*self.r0)
+            weights = self.fold(weights)
+            weights = weights.permute(2,3,0,1)
         return weights

@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 from torchvision import datasets, transforms
 from torch import nn, optim
 from torch.utils.data import DataLoader
@@ -83,7 +84,7 @@ def parse_args():
     parser.add_argument("--num_classes", type=int, default="10")
     parser.add_argument("--save_weights", type=bool, default=False)
     parser.add_argument("--epochs", type=int, default=200)
-    return parser.parse_args()    
+    return parser.parse_args()
 
 if __name__=='__main__':
     args = parse_args()
@@ -93,12 +94,12 @@ if __name__=='__main__':
 
     if not os.path.exists('weights'):
         os.mkdir('weights')
-        
+    
     model = get_model(args.model_name, args.num_classes)
     system = CoolSystem(model, args.dataset)
     
     model_parameters = filter(lambda p: p.requires_grad, system.model.parameters())
-    params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    params = sum([np.prod(p.size()) for p in model_parameters])
     
     log_name = args.model_name + '_' + args.dataset + '_params=' + str(int(params))
     checkpoint_callback = ModelCheckpoint(monitor='val_acc') if args.save_weights else False

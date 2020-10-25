@@ -84,21 +84,27 @@ class ResNetCifar(nn.Module):
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
-#         print(x.shape)
         x = self.layer1(x)
-#         print(x.shape)
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.avgpool(x).squeeze()
-#         print(x.shape)
         x = self.fc(x)
 
         return x
 
-def wrn_28_12(num_classes):
-    model = ResNetCifar(BasicBlock, [4, 4, 4], width=12, num_classes=num_classes)
+def wrn_16_1(num_classes=10):
+    model = ResNetCifar(BasicBlock, [2, 2, 2], width=1, num_classes=num_classes)
     return model
 
-def wrn_16_4(num_classes):
+def wrn_16_4(num_classes=10):
     model = ResNetCifar(BasicBlock, [2, 2, 2], width=4, num_classes=num_classes)
     return model
+
+def wrn_16_8(num_classes=10):
+    model = ResNetCifar(BasicBlock, [2, 2, 2], width=8, num_classes=num_classes)
+    return model
+
+def wrn_16_10(num_classes=10):
+    model = ResNetCifar(BasicBlock, [2, 2, 2], width=10, num_classes=num_classes)
+    return model
+

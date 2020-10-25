@@ -27,3 +27,11 @@ def get_model(model_name, num_classes):
         return resnet56_110(num_classes)
     elif model_name=='resnet110_218':
         return resnet110_218(num_classes)
+    elif model_name=='wrn_16_1':
+        return wrn_16_1(num_classes)
+    elif model_name=='wrn_16_4':
+        return wrn_16_4(num_classes)
+    elif model_name=='wrn_16_8':
+        return wrn_16_8(num_classes)
+    elif model_name=='wrn_16_10':
+        return wrn_16_10(num_classes)
