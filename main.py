@@ -80,8 +80,8 @@ class CoolSystem(pl.LightningModule):
 def parse_args():
     parser = argparse.ArgumentParser('RepeatNet')
     parser.add_argument("--model_name", type=str, default='rep_vgg_3')
-    parser.add_argument("--dataset", type=str, default="CIFAR10")
-    parser.add_argument("--num_classes", type=int, default="10")
+    parser.add_argument("--dataset", type=str, default="CIFAR100")
+    parser.add_argument("--num_classes", type=int, default="100")
     parser.add_argument("--save_weights", type=bool, default=False)
     parser.add_argument("--epochs", type=int, default=200)
     return parser.parse_args()

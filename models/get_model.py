@@ -1,6 +1,7 @@
 from .vgg_rep import *
 from .resnet_rep import *
 from .wrn_rep import *
+from .resnet import *
 
 def get_model(model_name, num_classes):
     if model_name=='rep_vgg_3':
@@ -27,6 +28,16 @@ def get_model(model_name, num_classes):
         return resnet56_110(num_classes)
     elif model_name=='resnet110_218':
         return resnet110_218(num_classes)
+    elif model_name=='resnet20':
+        return resnet20(num_classes)
+    elif model_name=='resnet32':
+        return resnet32(num_classes)
+    elif model_name=='resnet44':
+        return resnet44(num_classes)
+    elif model_name=='resnet56':
+        return resnet56(num_classes)
+    elif model_name=='resnet110':
+        return resnet110(num_classes)
     elif model_name=='wrn_16_1':
         return wrn_16_1(num_classes)
     elif model_name=='wrn_16_4':
