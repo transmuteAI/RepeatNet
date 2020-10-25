@@ -30,11 +30,12 @@ class Conv2dRepeat(nn.Module):
         if self.wactivation=='swish' and self.do_repeat:
             self.alphas =  nn.Parameter(torch.zeros((1, self.r0*self.r1)))
             self.betas =  nn.Parameter(torch.zeros((1, self.r0*self.r1)))
+            torch.nn.init.xavier_uniform_(self.alphas)
             torch.nn.init.xavier_uniform_(self.betas)
         elif self.wactivation=='fourier' and self.do_repeat:
             self.alphas =  nn.Parameter(torch.zeros((6, 1, self.r0*self.r1)))
-        torch.nn.init.xavier_uniform_(self.alphas)
-        
+            torch.nn.init.xavier_uniform_(self.alphas)
+
         if self.conv_type!="inter":
             self.weight = nn.Parameter(torch.zeros(original_weight_shape))
             torch.nn.init.xavier_uniform_(self.weight)
