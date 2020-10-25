@@ -1,30 +1,24 @@
-import numpy as np
 import torch
 from torchvision import datasets, transforms
 from torch import nn, optim
 from torch.utils.data import DataLoader
-import torchvision
-import matplotlib.pyplot as plt
-from time import time
 import os
-import random
 import argparse
 from models.get_model import get_model
 from pytorch_lightning import Trainer, loggers, seed_everything
-# from pytorch_lightning.callbacks import LearningRateLogger
 seed_everything(42)
 
 import pytorch_lightning as pl
 
 class CoolSystem(pl.LightningModule):
 
-    def __init__(self, model, dataset, batch_size=128):
+    def __init__(self, model, dataset, batch_size=128, mean=[0.4914, 0.4822, 0.4465], std=[0.2023, 0.1994, 0.2010]):
         super().__init__()
         self.batch_size = batch_size
         self.dataset = dataset
         self.model = model
-        self.mean = [0.4914, 0.4822, 0.4465]
-        self.std = [0.2023, 0.1994, 0.2010]
+        self.mean = mean
+        self.std = std
             
     def forward(self, x):
         return self.model(x)
@@ -32,14 +26,14 @@ class CoolSystem(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self(x)
-        loss = torch.nn.functional.cross_entropy(y_hat, y)
+        loss = nn.functional.cross_entropy(y_hat, y)
         tensorboard_logs = {'train_loss': loss}
         return {'loss': loss, 'log': tensorboard_logs}
 
     def validation_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self(x)
-        loss = torch.nn.functional.cross_entropy(y_hat, y)
+        loss = nn.functional.cross_entropy(y_hat, y)
         labels_hat = torch.argmax(y_hat, dim=1)
         val_acc = torch.sum(y == labels_hat).item() / (len(y) * 1.0)
         val_acc = torch.tensor(val_acc)
@@ -54,10 +48,10 @@ class CoolSystem(pl.LightningModule):
     def configure_optimizers(self):
         lambda1 = lambda epoch: (0.5 ** (epoch // 30))
         
-        optimizer = torch.optim.SGD(self.model.parameters(), 0.05,
+        optimizer = optim.SGD(self.model.parameters(), 0.05,
                                 momentum=0.9,
                                 weight_decay=5e-4)
-        scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=[lambda1], last_epoch=-1)
+        scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=[lambda1], last_epoch=-1)
         return [optimizer], [scheduler]
 
     def train_dataloader(self):
@@ -104,10 +98,9 @@ if __name__=='__main__':
     system = CoolSystem(model, args.dataset)
     
     model_parameters = filter(lambda p: p.requires_grad, system.model.parameters())
-    params = sum([np.prod(p.size()) for p in model_parameters])
+    params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     
     log_name = args.model_name + '_' + args.dataset + '_params=' + str(int(params))
-#     lr_logger = LearningRateLogger()
     checkpoint_callback = ModelCheckpoint(monitor='val_acc') if args.save_weights else False
     logger = loggers.TensorBoardLogger("logs", name=log_name, version=1)
     
