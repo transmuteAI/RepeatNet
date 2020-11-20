@@ -9,6 +9,7 @@ class Conv2dRepeat(nn.Module):
         
         self.ooc, self.oic, self.ok1, self.ok2 = original_weight_shape
         self.roc, self.ric, self.rk1, self.rk2 = repeated_weight_shape
+        self.do_repeat = False if original_weight_shape==repeated_weight_shape else True
         self.stride = stride
         self.padding = padding
         self.conv_type = conv_type
@@ -26,14 +27,15 @@ class Conv2dRepeat(nn.Module):
         self.r1 = self.ric//self.oic
         
         self.bias = nn.Parameter(torch.zeros(self.roc))
-        if self.wactivation=='swish':
+        if self.wactivation=='swish' and self.do_repeat:
             self.alphas =  nn.Parameter(torch.zeros((1, self.r0*self.r1)))
             self.betas =  nn.Parameter(torch.zeros((1, self.r0*self.r1)))
+            torch.nn.init.xavier_uniform_(self.alphas)
             torch.nn.init.xavier_uniform_(self.betas)
-        elif self.wactivation=='fourier':
+        elif self.wactivation=='fourier' and self.do_repeat:
             self.alphas =  nn.Parameter(torch.zeros((6, 1, self.r0*self.r1)))
-        torch.nn.init.xavier_uniform_(self.alphas)
-        
+            torch.nn.init.xavier_uniform_(self.alphas)
+
         if self.conv_type!="inter":
             self.weight = nn.Parameter(torch.zeros(original_weight_shape))
             torch.nn.init.xavier_uniform_(self.weight)
@@ -63,12 +65,13 @@ class Conv2dRepeat(nn.Module):
         return x
 
     def repeat(self, weights):
-        weights = weights.repeat((self.r0, self.r1,1,1))
-        weights = weights.permute(2,3,0,1)
-        weights = self.unfold(weights)
-        weights = weights.reshape(-1,self.r1*self.r0)
-        weights = self.activation(weights)
-        weights = weights.reshape(self.ok1, -1, self.r1*self.r0)
-        weights = self.fold(weights)
-        weights = weights.permute(2,3,0,1)
+        if self.do_repeat:
+            weights = weights.repeat((self.r0, self.r1,1,1))
+            weights = weights.permute(2,3,0,1)
+            weights = self.unfold(weights)
+            weights = weights.reshape(-1,self.r1*self.r0)
+            weights = self.activation(weights)
+            weights = weights.reshape(self.ok1, -1, self.r1*self.r0)
+            weights = self.fold(weights)
+            weights = weights.permute(2,3,0,1)
         return weights
