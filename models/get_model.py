@@ -17,6 +17,8 @@ def get_model(model_name, num_classes):
         return CVGG13_8(num_classes)
     elif model_name=='rep_vgg_9':
         return CVGG13_9(num_classes)
+    elif model_name[:3]=='VGG':
+        return VGG(model_name, num_classes)
     elif model_name=='resnet20_38':
         return resnet20_38(num_classes)
     elif model_name=='resnet32_62':
