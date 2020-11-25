@@ -13,7 +13,7 @@ import pytorch_lightning as pl
 
 class CoolSystem(pl.LightningModule):
 
-    def __init__(self, model, dataset, batch_size=128, mean=[0.4914, 0.4822, 0.4465], std=[0.2023, 0.1994, 0.2010]):
+    def __init__(self, model, dataset, batch_size=64, mean=[0.4914, 0.4822, 0.4465], std=[0.2023, 0.1994, 0.2010]):
         super().__init__()
         self.batch_size = batch_size
         self.dataset = dataset
@@ -47,9 +47,9 @@ class CoolSystem(pl.LightningModule):
         return {'val_loss': val_loss_mean, 'log': logs, 'progress_bar': logs}
 
     def configure_optimizers(self):
-        lambda1 = lambda epoch: (0.5 ** (epoch // 30))
+        lambda1 = lambda epoch: (0.2 ** (epoch // 60))
         
-        optimizer = optim.SGD(self.model.parameters(), 0.05,
+        optimizer = optim.SGD(self.model.parameters(), 0.1,
                                 momentum=0.9,
                                 weight_decay=5e-4)
         scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=[lambda1], last_epoch=-1)
@@ -79,9 +79,9 @@ class CoolSystem(pl.LightningModule):
 
 def parse_args():
     parser = argparse.ArgumentParser('RepeatNet')
-    parser.add_argument("--model_name", type=str, default='rep_vgg_3')
-    parser.add_argument("--dataset", type=str, default="CIFAR100")
-    parser.add_argument("--num_classes", type=int, default="100")
+    parser.add_argument("--model_name", type=str, default='wrn_28_10_d8d4d1')
+    parser.add_argument("--dataset", type=str, default="CIFAR10")
+    parser.add_argument("--num_classes", type=int, default="10")
     parser.add_argument("--save_weights", type=bool, default=False)
     parser.add_argument("--epochs", type=int, default=200)
     return parser.parse_args()

@@ -2,6 +2,7 @@ from .vgg_rep import *
 from .resnet_rep import *
 from .wrn_rep import *
 from .resnet import *
+from .wrn_equirep import *
 
 def get_model(model_name, num_classes):
     if model_name=='rep_vgg_3':
@@ -48,3 +49,5 @@ def get_model(model_name, num_classes):
         return wrn_16_8(num_classes)
     elif model_name=='wrn_16_10':
         return wrn_16_10(num_classes)
+    elif model_name=='wrn_28_10_d8d4d1':
+        return wrn_28_10_d8d4d1(num_classes)

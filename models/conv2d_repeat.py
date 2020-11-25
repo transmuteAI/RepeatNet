@@ -19,19 +19,26 @@ class Conv2dRepeat(nn.Module):
                 self.ooc+=previous_weight_shape[0]
             else:
                 self.oic+=previous_weight_shape[1]
-                
-        assert self.roc%self.ooc==0 and self.ric%self.oic==0, "Repeated channels are not multiple of original channels"
-        assert self.ok1==self.rk1 and self.ok2==self.rk2, "Repeated kernal size does not match original kernal size"
         
         self.r0 = self.roc//self.ooc
         self.r1 = self.ric//self.oic
         
+        self.e0 = self.roc%self.ooc
+        self.e1 = self.ric%self.oic
+        
         self.bias = nn.Parameter(torch.zeros(self.roc))
         if self.wactivation=='swish' and self.do_repeat:
-            self.alphas =  nn.Parameter(torch.zeros((1, self.r0*self.r1)))
-            self.betas =  nn.Parameter(torch.zeros((1, self.r0*self.r1)))
+            self.alphas = nn.Parameter(torch.zeros((1, self.r0*self.r1)))
+            self.betas = nn.Parameter(torch.zeros((1, self.r0*self.r1)))
             torch.nn.init.xavier_uniform_(self.alphas)
             torch.nn.init.xavier_uniform_(self.betas)
+            if self.e0!=0:
+                self.ealpha1 = nn.Parameter(torch.rand((1)))
+                self.ebeta1 = nn.Parameter(torch.rand((1)))
+            if self.e1!=0:
+                self.ealpha2 = nn.Parameter(torch.rand((1, 1)))
+                self.ebeta2 = nn.Parameter(torch.rand((1, 1)))
+            
         elif self.wactivation=='fourier' and self.do_repeat:
             self.alphas =  nn.Parameter(torch.zeros((6, 1, self.r0*self.r1)))
             torch.nn.init.xavier_uniform_(self.alphas)
@@ -44,7 +51,7 @@ class Conv2dRepeat(nn.Module):
             self.dim = concat_dim
         
         self.unfold = torch.nn.Unfold(kernel_size=(self.ooc, self.oic), stride=(self.ooc, self.oic))
-        self.fold = torch.nn.Fold(output_size=(self.roc, self.ric), kernel_size=(self.ooc, self.oic), stride=(self.ooc, self.oic))
+        self.fold = torch.nn.Fold(output_size=(self.ooc*self.r0, self.oic*self.r1), kernel_size=(self.ooc, self.oic), stride=(self.ooc, self.oic))
     
     def forward(self, x, weights=None):
         if self.conv_type=="intra":
@@ -54,12 +61,16 @@ class Conv2dRepeat(nn.Module):
         else:
             weights = torch.cat((self.weight, weights), dim = self.dim)
             weights = self.repeat(weights)
+        if self.e0!=0:
+            weights = torch.cat((weights, self.activation(weights[:self.e0,...], self.ealpha1, self.ebeta1)), dim=0)
+        if self.e1!=0:
+            weights = torch.cat((weights, self.activation(weights[:,:self.e1,...], self.ealpha2, self.ebeta2)), dim=1)
         x = F.conv2d(x, weights, self.bias, stride=self.stride, padding = self.padding)
         return x
     
-    def activation(self, weight):
+    def activation(self, weight, alphas, betas):
         if self.wactivation=="swish":
-            x = weight*self.alphas/(1+torch.exp(weight*self.betas))
+            x = weight*alphas/(1+torch.exp(weight*betas))
         elif self.wactivation=="fourier":
             x = self.alphas[0]+self.alphas[1]*weight**1+self.alphas[2]*weight**2+self.alphas[3]*weight**3+self.alphas[4]*weight**4+self.alphas[5]*weight**5
         return x
@@ -70,7 +81,7 @@ class Conv2dRepeat(nn.Module):
             weights = weights.permute(2,3,0,1)
             weights = self.unfold(weights)
             weights = weights.reshape(-1,self.r1*self.r0)
-            weights = self.activation(weights)
+            weights = self.activation(weights,self.alphas,self.betas)
             weights = weights.reshape(self.ok1, -1, self.r1*self.r0)
             weights = self.fold(weights)
             weights = weights.permute(2,3,0,1)

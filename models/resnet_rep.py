@@ -76,12 +76,14 @@ class ResNetCifar(nn.Module):
         self.bn1 = nn.BatchNorm2d(16)
         self.relu = nn.ReLU(inplace=True)
         
-        self.layer1, layer1_shape = self._make_layer(block, 16, layers[0], stride=1)
-        self.rep_layer1 = self._make_repeat_layer(layer1_shape, rep_block, 16, layers[0])       
-        self.layer2, layer2_shape = self._make_layer(block, 32, layers[1], stride=2)
-        self.rep_layer2 = self._make_repeat_layer(layer2_shape, rep_block, 32, layers[1])       
-        self.layer3, layer3_shape = self._make_layer(block, 64, layers[2], stride=2)
-        self.rep_layer3 = self._make_repeat_layer(layer3_shape, rep_block, 64, layers[2])       
+        self.layer1, layer1_shape = self._make_layer(block, 16, layers[0], stride = 1)
+        self.layer2, layer2_shape = self._make_layer(block, 32, layers[1], stride = 1)
+        self.layer3, layer3_shape = self._make_layer(block, 64, layers[2], stride = 1)
+    
+        self.rep_layer1 = self._make_repeat_layer(layer1_shape, rep_block, 64, layers[0], stride = 2)
+        self.rep_layer2 = self._make_repeat_layer(layer2_shape, rep_block, 64, layers[1], stride = 1)
+        self.rep_layer3 = self._make_repeat_layer(layer3_shape, rep_block, 64, layers[2], stride = 2)
+        
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(64, num_classes)
 
@@ -94,7 +96,7 @@ class ResNetCifar(nn.Module):
 
     def _make_layer(self, block, planes, blocks, stride=1):
         downsample = None
-        if stride != 1 or self.inplanes != planes:
+        if stride != 1 or self.inplanes!=planes:
             downsample = nn.Sequential(
                 nn.Conv2d(self.inplanes, planes,
                           kernel_size=1, stride=stride, bias=False),
@@ -112,10 +114,21 @@ class ResNetCifar(nn.Module):
 
         return nn.Sequential(*layers), layer_shape
     
-    def _make_repeat_layer(self, prev_layer_shape, block, planes, blocks):        
+    def _make_repeat_layer(self, prev_layer_shape, block, planes, blocks, stride=1):
+        downsample = None
+        if stride != 1 or self.inplanes!=planes:
+            downsample = nn.Sequential(
+                nn.Conv2d(self.inplanes, planes,
+                          kernel_size=1, stride=stride, bias=False),
+                nn.BatchNorm2d(planes),
+            )
+            
         layers = []
-        for i in range(blocks):
-            layers.append(block(planes, planes, prev_layer_shape[i]))
+        layer_shape = []
+        layers.append(block(self.inplanes, planes, prev_layer_shape[0], stride, downsample))
+        self.inplanes = planes
+        for i in range(1, blocks):
+            layers.append(block(self.inplanes, planes, prev_layer_shape[i]))
         return nn.Sequential(*layers)
 
     def forward(self, x):
@@ -123,14 +136,20 @@ class ResNetCifar(nn.Module):
         x = self.bn1(x)
         x = self.relu(x)
         x = self.layer1(x)
+#         print(x.shape)
+        x = self.layer2(x)
+#         print(x.shape)
+        x = self.layer3(x)
+#         print(x.shape)
         for Rlayer, OGlayer in zip(self.rep_layer1, self.layer1):
             x = Rlayer(x, [OGlayer.conv1.weight, OGlayer.conv2.weight])
-        x = self.layer2(x)
+#         print(x.shape)
         for Rlayer, OGlayer in zip(self.rep_layer2, self.layer2):
             x = Rlayer(x, [OGlayer.conv1.weight, OGlayer.conv2.weight])
-        x = self.layer3(x)
+#         print(x.shape)
         for Rlayer, OGlayer in zip(self.rep_layer3, self.layer3):
             x = Rlayer(x, [OGlayer.conv1.weight, OGlayer.conv2.weight])
+#         print(x.shape)
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
         x = self.fc(x)
@@ -159,3 +178,8 @@ def resnet110_218(num_classes=10):
 
 def resnet1202_2402(num_classes=10):
     return ResNetCifar(BasicBlock, RepeatBlock, [200, 200, 200], num_classes)
+
+if __name__=="__main__":
+    dummy = torch.zeros(2, 3, 32, 32)
+    model = resnet20_38(10)
+    model(dummy)
