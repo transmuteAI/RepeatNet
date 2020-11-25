@@ -77,7 +77,9 @@ class Conv2dRepeat(nn.Module):
 
     def repeat(self, weights):
         if self.do_repeat:
-            weights = weights.repeat((self.r0, self.r1,1,1))
+            weights = weights.unsqueeze(0).expand(self.r0, self.ooc, self.oic, self.ok1, self.ok2).contiguous().view(self.r0*self.ooc, self.oic, self.ok1, self.ok2).contiguous()
+            weights = weights.unsqueeze(1).expand(self.r0*self.ooc, self.r1, self.oic, self.ok1, self.ok2).contiguous().view(self.r0*self.ooc, self.r1*self.oic, self.ok1, self.ok2).contiguous()
+#             weights = weights.repeat((self.r0, self.r1,1,1)) <- Slow (https://github.com/pytorch/pytorch/issues/43192)
             weights = weights.permute(2,3,0,1)
             weights = self.unfold(weights)
             weights = weights.reshape(-1,self.r1*self.r0)
