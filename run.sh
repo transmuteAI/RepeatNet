@@ -1,0 +1,8 @@
+python --model_name 'wrn_16_1' --dataset 'CIFAR10' --num_classes '10'
+python --model_name 'wrn_16_1' --dataset 'CIFAR100' --num_classes '100'
+python --model_name 'wrn_16_4' --dataset 'CIFAR10' --num_classes '10'
+python --model_name 'wrn_16_4' --dataset 'CIFAR100' --num_classes '100'
+python --model_name 'wrn_16_8' --dataset 'CIFAR10' --num_classes '10'
+python --model_name 'wrn_16_8' --dataset 'CIFAR100' --num_classes '100'
+python --model_name 'wrn_16_10' --dataset 'CIFAR10' --num_classes '10'
+python --model_name 'wrn_16_10' --dataset 'CIFAR100' --num_classes '100'
