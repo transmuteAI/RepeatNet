@@ -79,7 +79,7 @@ class CoolSystem(pl.LightningModule):
 
 def parse_args():
     parser = argparse.ArgumentParser('RepeatNet')
-    parser.add_argument("--model_name", type=str, default='wrn_28_10_d8d4d1')
+    parser.add_argument("--model_name", type=str, default='wrn_16_4')
     parser.add_argument("--dataset", type=str, default="CIFAR10")
     parser.add_argument("--num_classes", type=int, default="10")
     parser.add_argument("--save_weights", type=bool, default=False)
@@ -105,5 +105,5 @@ if __name__=='__main__':
     checkpoint_callback = ModelCheckpoint(monitor='val_acc') if args.save_weights else False
     logger = loggers.TensorBoardLogger("logs", name=log_name, version=1)
     
-    trainer = Trainer(default_root_dir='weights/', gpus=1, max_epochs=args.epochs, deterministic=True, gradient_clip_val=1, logger=logger, checkpoint_callback=args.save_weights)
+    trainer = Trainer(default_root_dir='weights/', gpus=0, max_epochs=args.epochs, deterministic=True, gradient_clip_val=1, logger=logger, checkpoint_callback=args.save_weights)
     trainer.fit(system)

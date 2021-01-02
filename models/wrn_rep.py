@@ -50,6 +50,7 @@ class ResNetCifar(nn.Module):
         self.bn1 = nn.BatchNorm2d(16)
         self.relu = nn.ReLU(inplace=True)
         block.width = width
+        self.width = width
         self.layer1 = self._make_layer(block, 16*width, layers[0], stride=1)
         self.layer2 = self._make_layer(block, 32*width, layers[1], stride=2)
         self.layer3 = self._make_layer(block, 64*width, layers[2], stride=2)
@@ -65,10 +66,14 @@ class ResNetCifar(nn.Module):
 
     def _make_layer(self, block, planes, blocks, stride=1):
         downsample = None
-        if stride != 1 or self.inplanes != planes:
+        if stride != 1:
             downsample = nn.Sequential(
-                nn.Conv2d(self.inplanes, planes,
-                          kernel_size=1, stride=stride, bias=False),
+                Conv2dRepeat((planes//self.width, self.inplanes//self.width, 1, 1), (planes, self.inplanes, 1, 1), stride=stride, padding=0),
+                nn.BatchNorm2d(planes),
+            )
+        elif self.inplanes != planes:
+            downsample = nn.Sequential(
+                Conv2dRepeat((planes//self.width, self.inplanes, 1, 1), (planes, self.inplanes, 1, 1), stride=stride, padding=0),
                 nn.BatchNorm2d(planes),
             )
 

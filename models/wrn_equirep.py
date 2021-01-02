@@ -91,10 +91,10 @@ class ResNetCifar(nn.Module):
 
         return x
 
-def wrn_16_8(num_classes=10, factors = [1,1,1,1]):
-    model = ResNetCifar(BasicBlock, [2, 2, 2], factors, width=8, num_classes=num_classes)
+def wrn_28_10(num_classes=10, factors = [1,1,1,1]):
+    model = ResNetCifar(BasicBlock, [4, 4, 4], factors, width=10, num_classes=num_classes)
     return model
 
-def wrn_28_10_d8d4d1(num_classes=10, factors = [4,4,2*math.sqrt(2),2*math.sqrt(2)]):
+def wrn_28_10_d8d4d4(num_classes=10, factors = [4,4,2*math.sqrt(2),2*math.sqrt(2)]):
     model = ResNetCifar(BasicBlock, [4, 4, 4], factors, width=10, num_classes=num_classes)
     return model
