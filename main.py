@@ -1,11 +1,14 @@
 import torch
 import numpy as np
 from torchvision import datasets, transforms
+from torchvision.transforms import RandomRotation, RandomVerticalFlip, RandomHorizontalFlip, Pad, Resize, Compose, ToTensor
 from torch import nn, optim
 from torch.utils.data import DataLoader
 import os
+from PIL import Image
 import argparse
 from models.get_model import get_model
+from rotmnist import MnistRotDataset
 from pytorch_lightning import Trainer, loggers, seed_everything
 seed_everything(42)
 
@@ -48,12 +51,21 @@ class CoolSystem(pl.LightningModule):
 
     def configure_optimizers(self):
         lambda1 = lambda epoch: (0.2 ** (epoch // 60))
-        
-        optimizer = optim.SGD(self.model.parameters(), 0.1,
-                                momentum=0.9,
-                                weight_decay=5e-4)
-        scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=[lambda1], last_epoch=-1)
-        return [optimizer], [scheduler]
+        lambda2 = lambda epoch: (0.8 ** (epoch-9) if epoch>=10 else 1) 
+        if self.dataset == 'MNIST-rot':
+            optimizer = optim.Adam(model.parameters(), lr=0.001, 
+                                         weight_decay=1e-7)
+            scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=[lambda2], last_epoch=-1, verbose=True)
+        else:
+            optimizer = optim.SGD(self.model.parameters(), 0.1,
+                                    momentum=0.9,
+                                    weight_decay=5e-4)
+            scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=[lambda1], last_epoch=-1)
+        lr_scheduler = {
+            'scheduler': scheduler,
+            'name': 'lr'
+        }
+        return [optimizer], [lr_scheduler]
 
     def train_dataloader(self):
         transform_train = transforms.Compose([transforms.RandomCrop(32, padding=4),
@@ -64,6 +76,19 @@ class CoolSystem(pl.LightningModule):
             dataset = datasets.CIFAR10(root=os.getcwd(), train=True, transform=transform_train, download = True)
         elif self.dataset == 'CIFAR100':
             dataset = datasets.CIFAR100(root=os.getcwd(), train=True, transform=transform_train, download = True)
+        elif self.dataset == 'MNIST-rot':
+
+            train_transform = Compose([
+                Pad((0, 0, 1, 1), fill=0),
+                Resize(87),
+                RandomRotation(180, resample=Image.BILINEAR, expand=False),
+                RandomVerticalFlip(),
+                RandomHorizontalFlip(),
+                Resize(29),
+                ToTensor(),
+            ])
+
+            dataset = MnistRotDataset(mode='train', transform=train_transform)
         dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=8, shuffle=True, drop_last=True, pin_memory=True)
         return dataloader
     
@@ -74,6 +99,12 @@ class CoolSystem(pl.LightningModule):
             dataset = datasets.CIFAR10(root=os.getcwd(), train=False, transform=transform_val, download = True)
         elif self.dataset == 'CIFAR100':
             dataset = datasets.CIFAR100(root=os.getcwd(), train=False, transform=transform_val, download = True)
+        elif self.dataset == 'MNIST-rot':
+            test_transform = Compose([
+                Pad((0, 0, 1, 1), fill=0),
+                ToTensor(),
+            ])
+            dataset = MnistRotDataset(mode='test', transform=test_transform)
         dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=8, pin_memory=True)
         return dataloader
 

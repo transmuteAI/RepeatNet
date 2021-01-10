@@ -2,8 +2,7 @@ from .vgg_rep import *
 from .resnet_rep import *
 from .wrn_rep import *
 from .resnet import *
-from .wrn_equirep import *
-# from .wrn import *
+from .group_equivariant import *
 
 def get_model(model_name, num_classes):
     if model_name=='rep_vgg_3':
@@ -50,7 +49,17 @@ def get_model(model_name, num_classes):
         return wrn_16_8(num_classes)
     elif model_name=='wrn_16_10':
         return wrn_16_10(num_classes)
-#     elif model_name=='wrn_28_10':
-#         return wrn_28_10(num_classes)
-#     elif model_name=='wrn_28_10_d8d4d4':
-#         return wrn_28_10_d8d4d4(num_classes)
+    elif model_name=='c16':
+        return c16(num_classes)
+    elif model_name=='c8':
+        return c8(num_classes)
+    elif model_name=='c4':
+        return c4(num_classes)
+    elif model_name=='baseline':
+        return baseline(num_classes)
+    elif model_name=='c16_rep':
+        return c16_rep(num_classes)
+    elif model_name=='c8_rep':
+        return c8_rep(num_classes)
+    elif model_name=='c4_rep':
+        return c4_rep(num_classes)
