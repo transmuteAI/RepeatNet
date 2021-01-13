@@ -1,0 +1,8 @@
+numpy
+pandas
+torch
+torchvision
+matplotlib
+tqdm
+e2cnn
+pytorch_lightning

@@ -8,7 +8,7 @@ import os
 from PIL import Image
 import argparse
 from models.get_model import get_model
-from rotmnist import MnistRotDataset
+from utils.rotmnist import MnistRotDataset
 from pytorch_lightning import Trainer, loggers, seed_everything
 seed_everything(42)
 

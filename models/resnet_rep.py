@@ -7,15 +7,18 @@ def conv3x3(in_planes, out_planes, stride=1):
     return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
                      padding=1, bias=False)
 
-
 class BasicBlock(nn.Module):
-
+    width=1
     def __init__(self, inplanes, planes, stride=1, downsample=None):
         super(BasicBlock, self).__init__()
-        self.conv1 = conv3x3(inplanes, planes, stride)
+        if inplanes==16:
+            self.conv1 = Conv2dRepeat((planes//self.width, inplanes, 3, 3), (planes, inplanes, 3, 3), stride=stride)
+        else:
+            self.conv1 = Conv2dRepeat((planes//self.width, inplanes//self.width, 3, 3), (planes, inplanes, 3, 3), stride=stride)
+        
         self.bn1 = nn.BatchNorm2d(planes)
         self.relu = nn.ReLU(inplace=True)
-        self.conv2 = conv3x3(planes, planes)
+        self.conv2 = Conv2dRepeat((planes//self.width, planes//self.width, 3, 3), (planes, planes, 3, 3))
         self.bn2 = nn.BatchNorm2d(planes)
         self.downsample = downsample
         self.stride = stride
@@ -38,97 +41,48 @@ class BasicBlock(nn.Module):
 
         return out
 
-class RepeatBlock(nn.Module):
-    def __init__(self, inplanes, planes, input_weight_shape, stride=1, downsample=None):
-        super(RepeatBlock, self).__init__()
-        self.conv1 = Conv2dRepeat(input_weight_shape[0], (inplanes, planes, 3, 3), stride=stride, padding=1, conv_type="inter", weight_activation='swish')
-        self.bn1 = nn.BatchNorm2d(planes)
-        self.relu = nn.ReLU(inplace=True)
-        self.conv2 = Conv2dRepeat(input_weight_shape[1], (planes, planes, 3, 3), stride=1, padding=1, conv_type="inter", weight_activation='swish')
-        self.bn2 = nn.BatchNorm2d(planes)
-        self.downsample = downsample
-        self.stride = stride
-
-    def forward(self, x, input_weight):
-        residual = x
-
-        out = self.conv1(x, input_weight[0])
-        out = self.bn1(out)
-        out = self.relu(out)
-
-        out = self.conv2(out, input_weight[1])
-        out = self.bn2(out)
-
-        if self.downsample is not None:
-            residual = self.downsample(x)
-
-        out += residual
-        out = self.relu(out)
-
-        return out
-    
 class ResNetCifar(nn.Module):
-    def __init__(self, block, rep_block, layers, num_classes=10):
+    def __init__(self, block, layers, width=1, num_classes=10):
         self.inplanes = 16
         super(ResNetCifar, self).__init__()
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1,
                                bias=False)
         self.bn1 = nn.BatchNorm2d(16)
         self.relu = nn.ReLU(inplace=True)
-        
-        self.layer1, layer1_shape = self._make_layer(block, 16, layers[0], stride = 1)
-        self.layer2, layer2_shape = self._make_layer(block, 32, layers[1], stride = 1)
-        self.layer3, layer3_shape = self._make_layer(block, 64, layers[2], stride = 1)
-    
-        self.rep_layer1 = self._make_repeat_layer(layer1_shape, rep_block, 64, layers[0], stride = 2)
-        self.rep_layer2 = self._make_repeat_layer(layer2_shape, rep_block, 64, layers[1], stride = 1)
-        self.rep_layer3 = self._make_repeat_layer(layer3_shape, rep_block, 64, layers[2], stride = 2)
-        
+        block.width = width
+        self.width = width
+        self.layer1 = self._make_layer(block, 16*width, layers[0], stride=1)
+        self.layer2 = self._make_layer(block, 32*width, layers[1], stride=2)
+        self.layer3 = self._make_layer(block, 64*width, layers[2], stride=2)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = nn.Linear(64, num_classes)
+        self.fc = nn.Linear(64*width, num_classes)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
             elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
                 nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
+                nn.init.constant_(m.bias, 0.01)
 
     def _make_layer(self, block, planes, blocks, stride=1):
         downsample = None
-        if stride != 1 or self.inplanes!=planes:
+        if stride != 1:
             downsample = nn.Sequential(
-                nn.Conv2d(self.inplanes, planes,
-                          kernel_size=1, stride=stride, bias=False),
+                Conv2dRepeat((planes//self.width, self.inplanes//self.width, 1, 1), (planes, self.inplanes, 1, 1), stride=stride, padding=0),
+                nn.BatchNorm2d(planes),
+            )
+        elif self.inplanes != planes:
+            downsample = nn.Sequential(
+                Conv2dRepeat((planes//self.width, self.inplanes, 1, 1), (planes, self.inplanes, 1, 1), stride=stride, padding=0),
                 nn.BatchNorm2d(planes),
             )
 
         layers = []
-        layer_shape = []
         layers.append(block(self.inplanes, planes, stride, downsample))
-        layer_shape.append([(planes, self.inplanes, 3, 3) , (planes, planes, 3, 3)])
         self.inplanes = planes
         for i in range(1, blocks):
             layers.append(block(self.inplanes, planes))
-            layer_shape.append([(planes, self.inplanes, 3, 3) , (planes, planes, 3, 3)])
 
-        return nn.Sequential(*layers), layer_shape
-    
-    def _make_repeat_layer(self, prev_layer_shape, block, planes, blocks, stride=1):
-        downsample = None
-        if stride != 1 or self.inplanes!=planes:
-            downsample = nn.Sequential(
-                nn.Conv2d(self.inplanes, planes,
-                          kernel_size=1, stride=stride, bias=False),
-                nn.BatchNorm2d(planes),
-            )
-            
-        layers = []
-        layer_shape = []
-        layers.append(block(self.inplanes, planes, prev_layer_shape[0], stride, downsample))
-        self.inplanes = planes
-        for i in range(1, blocks):
-            layers.append(block(self.inplanes, planes, prev_layer_shape[i]))
         return nn.Sequential(*layers)
 
     def forward(self, x):
@@ -136,50 +90,14 @@ class ResNetCifar(nn.Module):
         x = self.bn1(x)
         x = self.relu(x)
         x = self.layer1(x)
-#         print(x.shape)
         x = self.layer2(x)
-#         print(x.shape)
         x = self.layer3(x)
-#         print(x.shape)
-        for Rlayer, OGlayer in zip(self.rep_layer1, self.layer1):
-            x = Rlayer(x, [OGlayer.conv1.weight, OGlayer.conv2.weight])
-#         print(x.shape)
-        for Rlayer, OGlayer in zip(self.rep_layer2, self.layer2):
-            x = Rlayer(x, [OGlayer.conv1.weight, OGlayer.conv2.weight])
-#         print(x.shape)
-        for Rlayer, OGlayer in zip(self.rep_layer3, self.layer3):
-            x = Rlayer(x, [OGlayer.conv1.weight, OGlayer.conv2.weight])
-#         print(x.shape)
-        x = self.avgpool(x)
-        x = torch.flatten(x, 1)
+        x = self.avgpool(x).squeeze()
         x = self.fc(x)
 
         return x
 
-def resnet20_38(num_classes=10):
-    return ResNetCifar(BasicBlock, RepeatBlock, [3, 3, 3], num_classes)
+def resnet_rep(num_classes=10, k=1):
+    model = ResNetCifar(BasicBlock, [2, 2, 2], width=k, num_classes=num_classes)
+    return model
 
-
-def resnet32_62(num_classes=10):
-    return ResNetCifar(BasicBlock, RepeatBlock, [5, 5, 5], num_classes)
-
-
-def resnet44_86(num_classes=10):
-    return ResNetCifar(BasicBlock, RepeatBlock, [7, 7, 7], num_classes)
-
-
-def resnet56_110(num_classes=10):
-    return ResNetCifar(BasicBlock, RepeatBlock, [9, 9, 9], num_classes)
-
-
-def resnet110_218(num_classes=10):
-    return ResNetCifar(BasicBlock, RepeatBlock, [18, 18, 18], num_classes)
-
-
-def resnet1202_2402(num_classes=10):
-    return ResNetCifar(BasicBlock, RepeatBlock, [200, 200, 200], num_classes)
-
-if __name__=="__main__":
-    dummy = torch.zeros(2, 3, 32, 32)
-    model = resnet20_38(10)
-    model(dummy)

@@ -5,14 +5,14 @@ from torch.nn.functional import conv2d
 from .conv2d_repeat import Conv2dRepeat
 
 cfg = {
-    'VGG10' : [64, 64, 'M', 128, 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M'],
-    'VGG9' : [64, 64, 'M', 128, 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 'M'],
-    'VGG8' : [64, 64, 'M', 128, 128, 'M', 256, 256, 'M', 512, 512, 'M'],
-    'VGG7' : [64, 64, 'M', 128, 128, 'M', 256, 256, 'M', 512, 'M'],
-    'VGG6' : [64, 64, 'M', 128, 128, 'M', 256, 256, 'M'],
-    'VGG5' : [64, 64, 'M', 128, 128, 'M', 256, 'M'],
-    'VGG4' : [64, 64, 'M', 128, 128, 'M'],
-    'VGG3' : [64, 64, 'M', 128, 'M'],
+    'VGG11' : [64, 64, 'M', 128, 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M'],
+    'VGG10' : [64, 64, 'M', 128, 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 'M'],
+    'VGG9' : [64, 64, 'M', 128, 128, 'M', 256, 256, 'M', 512, 512, 'M'],
+    'VGG8' : [64, 64, 'M', 128, 128, 'M', 256, 256, 'M', 512, 'M'],
+    'VGG7' : [64, 64, 'M', 128, 128, 'M', 256, 256, 'M'],
+    'VGG6' : [64, 64, 'M', 128, 128, 'M', 256, 'M'],
+    'VGG5' : [64, 64, 'M', 128, 128, 'M'],
+    'VGG4' : [64, 64, 'M', 128, 'M'],
 }
 
 class VGG(nn.Module):
@@ -20,9 +20,9 @@ class VGG(nn.Module):
         super(VGG, self).__init__()
         self.features = self._make_layers(cfg[vgg_name])
         self.vgg_name = vgg_name
-        if vgg_name not in ['VGG3','VGG5','VGG4','VGG6']:
+        if vgg_name not in ['VGG4','VGG5','VGG6','VGG7']:
             self.classifier = nn.Linear(512, num_classes)
-        elif vgg_name in ['VGG5', 'VGG6']:
+        elif vgg_name in ['VGG6', 'VGG7']:
             self.classifier = nn.Linear(256, num_classes)
         else:
             self.classifier = nn.Linear(128, num_classes)
@@ -30,7 +30,7 @@ class VGG(nn.Module):
 
     def forward(self, x):
         out = self.features(x)
-        if self.vgg_name in ['VGG3','VGG4','VGG5','VGG6','VGG7','VGG8']:
+        if self.vgg_name in ['VGG4','VGG5','VGG6','VGG7','VGG8','VGG9']:
             out = self.avg_pool(out)
         out = out.view(out.size(0), -1)
         out = self.classifier(out)
@@ -50,9 +50,9 @@ class VGG(nn.Module):
         layers += [nn.AvgPool2d(kernel_size=1, stride=1)]
         return nn.Sequential(*layers)
     
-class CVGG13_3(nn.Module):
+class CVGG11_4(nn.Module):
     def __init__(self, num_classes=10):
-        super(CVGG13_3, self).__init__()
+        super(CVGG11_4, self).__init__()
         self.conv1_1 = nn.Conv2d(3, 64, kernel_size=3, padding=1)
         self.conv1_2 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
         self.conv2_1 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
@@ -123,9 +123,9 @@ class CVGG13_3(nn.Module):
         x = self.fc(x)
         return x
     
-class CVGG13_4(nn.Module):
+class CVGG11_5(nn.Module):
     def __init__(self, num_classes=10):
-        super(CVGG13_4, self).__init__()
+        super(CVGG11_5, self).__init__()
         self.conv1_1 = nn.Conv2d(3, 64, kernel_size=3, padding=1)
         self.conv1_2 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
         self.conv2_1 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
@@ -196,9 +196,9 @@ class CVGG13_4(nn.Module):
         x = self.fc(x)
         return x
     
-class CVGG13_5(nn.Module):
+class CVGG11_6(nn.Module):
     def __init__(self, num_classes=10):
-        super(CVGG13_5, self).__init__()
+        super(CVGG11_6, self).__init__()
         self.conv1_1 = nn.Conv2d(3, 64, kernel_size=3, padding=1)
         self.conv1_2 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
         self.conv2_1 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
@@ -269,9 +269,9 @@ class CVGG13_5(nn.Module):
         x = self.fc(x)
         return x
     
-class CVGG13_6(nn.Module):
+class CVGG11_7(nn.Module):
     def __init__(self, num_classes=10):
-        super(CVGG13_6, self).__init__()
+        super(CVGG11_7, self).__init__()
         self.conv1_1 = nn.Conv2d(3, 64, kernel_size=3, padding=1)
         self.conv1_2 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
         self.conv2_1 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
@@ -342,9 +342,9 @@ class CVGG13_6(nn.Module):
         x = self.fc(x)
         return x
     
-class CVGG13_7(nn.Module):
+class CVGG11_8(nn.Module):
     def __init__(self, num_classes=10):
-        super(CVGG13_7, self).__init__()
+        super(CVGG11_8, self).__init__()
         self.conv1_1 = nn.Conv2d(3, 64, kernel_size=3, padding=1)
         self.conv1_2 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
         self.conv2_1 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
@@ -415,9 +415,9 @@ class CVGG13_7(nn.Module):
         x = self.fc(x)
         return x
 
-class CVGG13_8(nn.Module):
+class CVGG11_9(nn.Module):
     def __init__(self, num_classes=10):
-        super(CVGG13_8, self).__init__()
+        super(CVGG11_9, self).__init__()
         self.conv1_1 = nn.Conv2d(3, 64, kernel_size=3, padding=1)
         self.conv1_2 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
         self.conv2_1 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
@@ -488,9 +488,9 @@ class CVGG13_8(nn.Module):
         x = self.fc(x)
         return x
     
-class CVGG13_9(nn.Module):
+class CVGG11_10(nn.Module):
     def __init__(self, num_classes=10):
-        super(CVGG13_9, self).__init__()
+        super(CVGG11_10, self).__init__()
         self.conv1_1 = nn.Conv2d(3, 64, kernel_size=3, padding=1)
         self.conv1_2 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
         self.conv2_1 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
