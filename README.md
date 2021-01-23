@@ -8,7 +8,7 @@ pip install -r requirements.txt
 ```
 
 ### Note - 
-Make sure to comment out "e2cnn/nn/modules/r2_conv/r2convolution.py" Line number 176 and 177
+Make sure to comment out "e2cnn/nn/modules/r2_conv/r2convolution.py" Line number 176 and 177.
 
 # Usage (summary)
 
