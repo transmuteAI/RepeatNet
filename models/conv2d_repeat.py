@@ -4,16 +4,16 @@ import torch.nn.functional as F
 from torch.nn.functional import conv2d
 
 class Conv2dRepeat(nn.Module):
-    def __init__(self, original_weight_shape, repeated_weight_shape, previous_weight_shape=None, concat_dim=1, stride=1, padding=1, conv_type="intra", weight_activation='swish'):
+    def __init__(self, original_weight_shape, repeated_weight_shape, previous_weight_shape=None, concat_dim=1, stride=1, padding=1, conv_type="intra", args=None):
         super(Conv2dRepeat, self).__init__()
-        
+        self.args = args
         self.ooc, self.oic, self.ok1, self.ok2 = original_weight_shape
         self.roc, self.ric, self.rk1, self.rk2 = repeated_weight_shape
         self.do_repeat = False if original_weight_shape==repeated_weight_shape else True
         self.stride = stride
         self.padding = padding
         self.conv_type = conv_type
-        self.wactivation = weight_activation
+        self.args.wactivation = self.args.weight_activation
         if previous_weight_shape is not None:
             if concat_dim==0:
                 self.ooc+=previous_weight_shape[0]
@@ -52,6 +52,12 @@ class Conv2dRepeat(nn.Module):
         
         self.unfold = torch.nn.Unfold(kernel_size=(self.ooc, self.oic), stride=(self.ooc, self.oic))
         self.fold = torch.nn.Fold(output_size=(self.ooc*self.r0, self.oic*self.r1), kernel_size=(self.ooc, self.oic), stride=(self.ooc, self.oic))
+
+        if self.wactivation=='static_drop':
+            self.drop_mask = torch.ones(self.roc, self.ric, self.rk1, self.rk2)*(1-self.args.drop_rate)
+            self.drop_mask = torch.bernoulli(self.drop_mask)
+            self.drop_mask = nn.Parameter(self.drop_mask)
+            self.drop_mask.requires_grad = False
     
     def forward(self, x, weights=None):
         if self.conv_type=="intra":
@@ -68,11 +74,15 @@ class Conv2dRepeat(nn.Module):
         x = F.conv2d(x, weights, self.bias, stride=self.stride, padding = self.padding)
         return x
     
-    def activation(self, weight, alphas, betas):
+    def activation(self, weight, alphas=None, betas=None):
         if self.wactivation=="swish":
             x = weight*alphas/(1+torch.exp(weight*betas))
         elif self.wactivation=="fourier":
             x = self.alphas[0]+self.alphas[1]*weight**1+self.alphas[2]*weight**2+self.alphas[3]*weight**3+self.alphas[4]*weight**4+self.alphas[5]*weight**5
+        elif self.wactivation=="static_drop":
+            x = weight*(self.drop_mask.reshape_as(weight))
+        elif self.wactivation==None:
+            x = weight
         return x
 
     def repeat(self, weights):

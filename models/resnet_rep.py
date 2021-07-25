@@ -9,16 +9,16 @@ def conv3x3(in_planes, out_planes, stride=1):
 
 class BasicBlock(nn.Module):
     width=1
-    def __init__(self, inplanes, planes, stride=1, downsample=None):
+    def __init__(self, inplanes, planes, stride=1, downsample=None, args=None):
         super(BasicBlock, self).__init__()
         if inplanes==16:
-            self.conv1 = Conv2dRepeat((planes//self.width, inplanes, 3, 3), (planes, inplanes, 3, 3), stride=stride)
+            self.conv1 = Conv2dRepeat((planes//self.width, inplanes, 3, 3), (planes, inplanes, 3, 3), stride=stride, args=args)
         else:
-            self.conv1 = Conv2dRepeat((planes//self.width, inplanes//self.width, 3, 3), (planes, inplanes, 3, 3), stride=stride)
+            self.conv1 = Conv2dRepeat((planes//self.width, inplanes//self.width, 3, 3), (planes, inplanes, 3, 3), stride=stride, args=args)
         
         self.bn1 = nn.BatchNorm2d(planes)
         self.relu = nn.ReLU(inplace=True)
-        self.conv2 = Conv2dRepeat((planes//self.width, planes//self.width, 3, 3), (planes, planes, 3, 3))
+        self.conv2 = Conv2dRepeat((planes//self.width, planes//self.width, 3, 3), (planes, planes, 3, 3), args=args)
         self.bn2 = nn.BatchNorm2d(planes)
         self.downsample = downsample
         self.stride = stride
@@ -42,9 +42,10 @@ class BasicBlock(nn.Module):
         return out
 
 class ResNetCifar(nn.Module):
-    def __init__(self, block, layers, width=1, num_classes=10):
+    def __init__(self, block, layers, width=1, num_classes=10, args=None):
         self.inplanes = 16
         super(ResNetCifar, self).__init__()
+        self.args = args
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1,
                                bias=False)
         self.bn1 = nn.BatchNorm2d(16)
@@ -68,20 +69,20 @@ class ResNetCifar(nn.Module):
         downsample = None
         if stride != 1:
             downsample = nn.Sequential(
-                Conv2dRepeat((planes//self.width, self.inplanes//self.width, 1, 1), (planes, self.inplanes, 1, 1), stride=stride, padding=0),
+                Conv2dRepeat((planes//self.width, self.inplanes//self.width, 1, 1), (planes, self.inplanes, 1, 1), stride=stride, padding=0, args=self.args),
                 nn.BatchNorm2d(planes),
             )
         elif self.inplanes != planes:
             downsample = nn.Sequential(
-                Conv2dRepeat((planes//self.width, self.inplanes, 1, 1), (planes, self.inplanes, 1, 1), stride=stride, padding=0),
+                Conv2dRepeat((planes//self.width, self.inplanes, 1, 1), (planes, self.inplanes, 1, 1), stride=stride, padding=0, args=self.args),
                 nn.BatchNorm2d(planes),
             )
 
         layers = []
-        layers.append(block(self.inplanes, planes, stride, downsample))
+        layers.append(block(self.inplanes, planes, stride, downsample, args=self.args))
         self.inplanes = planes
         for i in range(1, blocks):
-            layers.append(block(self.inplanes, planes))
+            layers.append(block(self.inplanes, planes, args = self.args))
 
         return nn.Sequential(*layers)
 
@@ -97,7 +98,7 @@ class ResNetCifar(nn.Module):
 
         return x
 
-def resnet_rep(num_classes=10, k=1):
-    model = ResNetCifar(BasicBlock, [2, 2, 2], width=k, num_classes=num_classes)
+def resnet_rep(num_classes=10, k=1, args=None):
+    model = ResNetCifar(BasicBlock, [2, 2, 2], width=k, num_classes=num_classes, args = args)
     return model
 

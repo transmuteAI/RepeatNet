@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from torchvision import datasets, transforms
-from torchvision.transforms import RandomRotation, RandomVerticalFlip, RandomHorizontalFlip, Pad, Resize, Compose, ToTensor
+from torchvision import transforms 
 from torch import nn, optim
 from torch.utils.data import DataLoader
 import os
@@ -9,6 +9,7 @@ from PIL import Image
 import argparse
 from models.get_model import get_model
 from utils.rotmnist import MnistRotDataset
+from utils.tinyimagenet import TinyImageNet
 from pytorch_lightning import Trainer, loggers, seed_everything
 seed_everything(42)
 
@@ -16,13 +17,11 @@ import pytorch_lightning as pl
 
 class CoolSystem(pl.LightningModule):
 
-    def __init__(self, model, dataset, batch_size=64, mean=[0.4914, 0.4822, 0.4465], std=[0.2023, 0.1994, 0.2010]):
+    def __init__(self, model, dataset, batch_size=64):
         super().__init__()
         self.batch_size = batch_size
         self.dataset = dataset
         self.model = model
-        self.mean = mean
-        self.std = std
             
     def forward(self, x):
         return self.model(x)
@@ -68,27 +67,40 @@ class CoolSystem(pl.LightningModule):
         return [optimizer], [lr_scheduler]
 
     def train_dataloader(self):
+        mean=[0.4914, 0.4822, 0.4465]
+        std=[0.2023, 0.1994, 0.2010]
         transform_train = transforms.Compose([transforms.RandomCrop(32, padding=4),
                                               transforms.RandomHorizontalFlip(),
                                               transforms.ToTensor(),
-                                              transforms.Normalize(self.mean, self.std)])
+                                              transforms.Normalize(mean, std)])
         if self.dataset == 'CIFAR10':
             dataset = datasets.CIFAR10(root=os.getcwd(), train=True, transform=transform_train, download = True)
         elif self.dataset == 'CIFAR100':
             dataset = datasets.CIFAR100(root=os.getcwd(), train=True, transform=transform_train, download = True)
         elif self.dataset == 'MNIST-rot':
 
-            train_transform = Compose([
-                Pad((0, 0, 1, 1), fill=0),
-                Resize(87),
-                RandomRotation(180, resample=Image.BILINEAR, expand=False),
-                RandomVerticalFlip(),
-                RandomHorizontalFlip(),
-                Resize(29),
-                ToTensor(),
+            train_transform = transforms.Compose([
+                transforms.Pad((0, 0, 1, 1), fill=0),
+                transforms.Resize(87),
+                transforms.RandomRotation(180, resample=Image.BILINEAR, expand=False),
+                transforms.RandomVerticalFlip(),
+                transforms.RandomHorizontalFlip(),
+                transforms.Resize(29),
+                transforms.ToTensor(),
             ])
 
             dataset = MnistRotDataset(mode='train', transform=train_transform)
+        elif self.dataset == 'TINYIMNET':
+            norm_mean = [0.485, 0.456, 0.406]
+            norm_std = [0.229, 0.224, 0.225]
+            norm_transform = transforms.Normalize(norm_mean, norm_std)
+            train_transform = transforms.Compose([
+                transforms.RandomAffine(degrees=20.0, scale=(0.8, 1.2), shear=20.0),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                norm_transform,
+            ])
+            dataset = TinyImageNet(os.getcwd(), train=True, transform=train_transform)
         dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=8, shuffle=True, drop_last=True, pin_memory=True)
         return dataloader
     
@@ -100,11 +112,20 @@ class CoolSystem(pl.LightningModule):
         elif self.dataset == 'CIFAR100':
             dataset = datasets.CIFAR100(root=os.getcwd(), train=False, transform=transform_val, download = True)
         elif self.dataset == 'MNIST-rot':
-            test_transform = Compose([
-                Pad((0, 0, 1, 1), fill=0),
-                ToTensor(),
+            transform_val = transforms.Compose([
+                transforms.Pad((0, 0, 1, 1), fill=0),
+                transforms.ToTensor(),
             ])
-            dataset = MnistRotDataset(mode='test', transform=test_transform)
+            dataset = MnistRotDataset(mode='test', transform=transform_val)
+        elif self.dataset == 'TINYIMNET':
+            norm_mean = [0.485, 0.456, 0.406]
+            norm_std = [0.229, 0.224, 0.225]
+            norm_transform = transforms.Normalize(norm_mean, norm_std)
+            transform_val = transforms.Compose([
+                transforms.ToTensor(),
+                norm_transform
+            ])
+            dataset = TinyImageNet(os.getcwd(), train=False, transform=transform_val)
         dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=8, pin_memory=True)
         return dataloader
 
@@ -126,7 +147,7 @@ if __name__=='__main__':
     if not os.path.exists('weights'):
         os.mkdir('weights')
     
-    model = get_model(args.model_name, args.num_classes)
+    model = get_model(args.model_name, args.num_classes, args)
     system = CoolSystem(model, args.dataset)
     
     model_parameters = filter(lambda p: p.requires_grad, system.model.parameters())
