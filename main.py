@@ -105,8 +105,10 @@ class CoolSystem(pl.LightningModule):
         return dataloader
     
     def val_dataloader(self):
+        mean=[0.4914, 0.4822, 0.4465]
+        std=[0.2023, 0.1994, 0.2010]
         transform_val = transforms.Compose([transforms.ToTensor(),
-                                            transforms.Normalize(self.mean, self.std)])
+                                            transforms.Normalize(mean, std)])
         if self.dataset == 'CIFAR10':
             dataset = datasets.CIFAR10(root=os.getcwd(), train=False, transform=transform_val, download = True)
         elif self.dataset == 'CIFAR100':
@@ -136,6 +138,8 @@ def parse_args():
     parser.add_argument("--num_classes", type=int, default="10")
     parser.add_argument("--save_weights", type=bool, default=False)
     parser.add_argument("--epochs", type=int, default=200)
+    parser.add_argument("--weight_activation", type=str, default='static_drop')
+    parser.add_argument("--drop_rate", type=float, default=0.5)
     return parser.parse_args()
 
 if __name__=='__main__':

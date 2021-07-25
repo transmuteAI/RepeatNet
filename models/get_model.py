@@ -1,6 +1,6 @@
 from .vgg_rep import *
 from .resnet_rep import *
-from .group_equivariant import *
+# from .group_equivariant import *
 
 def get_model(model_name, num_classes, args=None):
     if model_name=='rep_vgg_4':

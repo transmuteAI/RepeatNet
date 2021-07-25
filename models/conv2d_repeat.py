@@ -25,7 +25,7 @@ class Conv2dRepeat(nn.Module):
         self.stride = stride
         self.padding = padding
         self.conv_type = conv_type
-        self.args.wactivation = self.args.weight_activation
+        self.wactivation = self.args.weight_activation
         if previous_weight_shape is not None:
             if concat_dim==0:
                 self.ooc+=previous_weight_shape[0]
@@ -37,6 +37,9 @@ class Conv2dRepeat(nn.Module):
         
         self.e0 = self.roc%self.ooc
         self.e1 = self.ric%self.oic
+        
+        self.alphas = None
+        self.betas = None
         
         self.bias = nn.Parameter(torch.zeros(self.roc))
         if self.wactivation=='swish' and self.do_repeat:
@@ -100,7 +103,7 @@ class Conv2dRepeat(nn.Module):
         elif self.wactivation=="static_drop":
             x = weight*(self.drop_mask.reshape_as(weight))
         elif self.wactivation=='bireal':
-            x = self.binary_activation(x)
+            x = self.binary_activation(weight)
         elif self.wactivation==None:
             x = weight
         return x
