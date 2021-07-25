@@ -13,7 +13,7 @@ class HardBinaryConv(nn.Module):
         binary_weights_no_grad = torch.sign(real_weight)
         cliped_weights = torch.clamp(real_weight, -1.0, 1.0)
         binary_weights = binary_weights_no_grad.detach() - cliped_weights.detach() + cliped_weights
-        return binary_weights.reshape_like(x)*x
+        return binary_weights.reshape_as(x)*x
 
 class Conv2dRepeat(nn.Module):
     def __init__(self, original_weight_shape, repeated_weight_shape, previous_weight_shape=None, concat_dim=1, stride=1, padding=1, conv_type="intra", args=None):

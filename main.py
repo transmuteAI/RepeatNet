@@ -138,7 +138,7 @@ def parse_args():
     parser.add_argument("--num_classes", type=int, default="10")
     parser.add_argument("--save_weights", type=bool, default=False)
     parser.add_argument("--epochs", type=int, default=200)
-    parser.add_argument("--weight_activation", type=str, default='static_drop')
+    parser.add_argument("--weight_activation", type=str, default='bireal')
     parser.add_argument("--drop_rate", type=float, default=0.5)
     return parser.parse_args()
 
