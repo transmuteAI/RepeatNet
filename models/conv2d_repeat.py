@@ -3,6 +3,18 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.functional import conv2d
 
+class HardBinaryConv(nn.Module):
+    def __init__(self, roc, ric, rk1, rk2):
+        super(HardBinaryConv, self).__init__()
+        self.weight = nn.Parameter(torch.rand(roc, ric, rk1, rk2)*0.001, requires_grad=True)
+
+    def forward(self, x):
+        real_weight = self.weight
+        binary_weights_no_grad = torch.sign(real_weight)
+        cliped_weights = torch.clamp(real_weight, -1.0, 1.0)
+        binary_weights = binary_weights_no_grad.detach() - cliped_weights.detach() + cliped_weights
+        return binary_weights.reshape_like(x)*x
+
 class Conv2dRepeat(nn.Module):
     def __init__(self, original_weight_shape, repeated_weight_shape, previous_weight_shape=None, concat_dim=1, stride=1, padding=1, conv_type="intra", args=None):
         super(Conv2dRepeat, self).__init__()
@@ -43,21 +55,27 @@ class Conv2dRepeat(nn.Module):
             self.alphas =  nn.Parameter(torch.zeros((6, 1, self.r0*self.r1)))
             torch.nn.init.xavier_uniform_(self.alphas)
 
+        elif self.wactivation=='static_drop':
+            self.drop_mask = torch.ones(self.roc, self.ric, self.rk1, self.rk2)*(1-self.args.drop_rate)
+            self.drop_mask = torch.bernoulli(self.drop_mask)
+            self.drop_mask = nn.Parameter(self.drop_mask)
+            self.drop_mask.requires_grad = False
+        
+        elif self.wactivation=='bireal':
+            self.binary_activation = HardBinaryConv(self.roc, self.ric, self.rk1, self.rk2)
+
         if self.conv_type!="inter":
             self.weight = nn.Parameter(torch.zeros(original_weight_shape))
             torch.nn.init.xavier_uniform_(self.weight)
             
         if self.conv_type=='hybrid':
             self.dim = concat_dim
+
         
         self.unfold = torch.nn.Unfold(kernel_size=(self.ooc, self.oic), stride=(self.ooc, self.oic))
         self.fold = torch.nn.Fold(output_size=(self.ooc*self.r0, self.oic*self.r1), kernel_size=(self.ooc, self.oic), stride=(self.ooc, self.oic))
 
-        if self.wactivation=='static_drop':
-            self.drop_mask = torch.ones(self.roc, self.ric, self.rk1, self.rk2)*(1-self.args.drop_rate)
-            self.drop_mask = torch.bernoulli(self.drop_mask)
-            self.drop_mask = nn.Parameter(self.drop_mask)
-            self.drop_mask.requires_grad = False
+        
     
     def forward(self, x, weights=None):
         if self.conv_type=="intra":
@@ -81,6 +99,8 @@ class Conv2dRepeat(nn.Module):
             x = self.alphas[0]+self.alphas[1]*weight**1+self.alphas[2]*weight**2+self.alphas[3]*weight**3+self.alphas[4]*weight**4+self.alphas[5]*weight**5
         elif self.wactivation=="static_drop":
             x = weight*(self.drop_mask.reshape_as(weight))
+        elif self.wactivation=='bireal':
+            x = self.binary_activation(x)
         elif self.wactivation==None:
             x = weight
         return x
