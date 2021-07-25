@@ -53,15 +53,11 @@ class Conv2dRepeat(nn.Module):
             if self.e1!=0:
                 self.ealpha2 = nn.Parameter(torch.rand((1, 1)))
                 self.ebeta2 = nn.Parameter(torch.rand((1, 1)))
-            
-        elif self.wactivation=='fourier' and self.do_repeat:
-            self.alphas =  nn.Parameter(torch.zeros((6, 1, self.r0*self.r1)))
-            torch.nn.init.xavier_uniform_(self.alphas)
 
         elif self.wactivation=='static_drop':
             self.drop_mask = torch.ones(self.roc, self.ric, self.rk1, self.rk2)*(1-self.args.drop_rate)
             self.drop_mask = torch.bernoulli(self.drop_mask)
-            self.drop_mask = nn.Parameter(self.drop_mask)
+            self.drop_mask = nn.Parameter(self.drop_mask, requires_grad=False)
             self.drop_mask.requires_grad = False
         
         elif self.wactivation=='bireal':
@@ -98,10 +94,8 @@ class Conv2dRepeat(nn.Module):
     def activation(self, weight, alphas=None, betas=None):
         if self.wactivation=="swish":
             x = weight*alphas/(1+torch.exp(weight*betas))
-        elif self.wactivation=="fourier":
-            x = self.alphas[0]+self.alphas[1]*weight**1+self.alphas[2]*weight**2+self.alphas[3]*weight**3+self.alphas[4]*weight**4+self.alphas[5]*weight**5
         elif self.wactivation=="static_drop":
-            x = weight*(self.drop_mask.reshape_as(weight))
+            x = weight*(self.drop_mask.reshape_as(weight).detach())
         elif self.wactivation=='bireal':
             x = self.binary_activation(weight)
         elif self.wactivation==None:
