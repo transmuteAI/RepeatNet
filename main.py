@@ -11,17 +11,20 @@ from models.get_model import get_model
 from utils.rotmnist import MnistRotDataset
 from utils.tinyimagenet import TinyImageNet
 from pytorch_lightning import Trainer, loggers, seed_everything
+from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 seed_everything(42)
 
 import pytorch_lightning as pl
 
 class CoolSystem(pl.LightningModule):
 
-    def __init__(self, model, dataset, batch_size=64):
+    def __init__(self, args, batch_size=128):
         super().__init__()
+        self.args = args
+        self.save_hyperparameters()
         self.batch_size = batch_size
-        self.dataset = dataset
-        self.model = model
+        self.dataset = args.dataset
+        self.model = get_model(args.model_name, args.num_classes, args)
             
     def forward(self, x):
         return self.model(x)
@@ -30,8 +33,8 @@ class CoolSystem(pl.LightningModule):
         x, y = batch
         y_hat = self(x)
         loss = nn.functional.cross_entropy(y_hat, y)
-        tensorboard_logs = {'train_loss': loss}
-        return {'loss': loss, 'log': tensorboard_logs}
+        self.log('train_loss', loss)
+        return loss
 
     def validation_step(self, batch, batch_idx):
         x, y = batch
@@ -45,21 +48,25 @@ class CoolSystem(pl.LightningModule):
     def validation_epoch_end(self, outputs):
         val_loss_mean = torch.stack([x['val_loss'] for x in outputs]).mean()
         val_acc_mean = torch.stack([x['val_acc'] for x in outputs]).mean()
-        logs = {'val_loss': val_loss_mean, 'val_acc': val_acc_mean}
-        return {'val_loss': val_loss_mean, 'log': logs, 'progress_bar': logs}
+        self.log('val_loss', val_loss_mean, prog_bar=True)
+        self.log('val_acc', val_acc_mean, prog_bar=True)
 
     def configure_optimizers(self):
-        lambda1 = lambda epoch: (0.2 ** (epoch // 60))
-        lambda2 = lambda epoch: (0.8 ** (epoch-9) if epoch>=10 else 1) 
         if self.dataset == 'MNIST-rot':
+            lambda1 = lambda epoch: (0.8 ** (epoch-9) if epoch>=10 else 1)
             optimizer = optim.Adam(model.parameters(), lr=0.001, 
                                          weight_decay=1e-7)
-            scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=[lambda2], last_epoch=-1, verbose=True)
+            scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=[lambda1], last_epoch=-1, verbose=True)
+        elif self.dataset == 'TINYIMNET':
+            optimizer = optim.SGD(self.model.parameters(), 0.1,
+                                    momentum=0.9,
+                                    weight_decay=5e-4)
+            scheduler = optim.lr_scheduler.MultiStepLR(optimizer,  milestones=[30,45], gamma=0.1, verbose=True)
         else:
             optimizer = optim.SGD(self.model.parameters(), 0.1,
                                     momentum=0.9,
                                     weight_decay=5e-4)
-            scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=[lambda1], last_epoch=-1)
+            scheduler = optim.lr_scheduler.MultiStepLR(optimizer,  milestones=[60,90], gamma=0.1, verbose=True)
         lr_scheduler = {
             'scheduler': scheduler,
             'name': 'lr'
@@ -133,12 +140,12 @@ class CoolSystem(pl.LightningModule):
 
 def parse_args():
     parser = argparse.ArgumentParser('RepeatNet')
-    parser.add_argument("--model_name", type=str, default='wrn_16_4')
+    parser.add_argument("--model_name", type=str, default='resnet_18_4')
     parser.add_argument("--dataset", type=str, default="CIFAR10")
     parser.add_argument("--num_classes", type=int, default="10")
-    parser.add_argument("--save_weights", type=bool, default=False)
+    parser.add_argument("--save_weights", action='store_true')
     parser.add_argument("--epochs", type=int, default=200)
-    parser.add_argument("--weight_activation", type=str, default='bireal')
+    parser.add_argument("--weight_activation", type=str, default='linear')
     parser.add_argument("--drop_rate", type=float, default=0.5)
     return parser.parse_args()
 
@@ -152,14 +159,14 @@ if __name__=='__main__':
         os.mkdir('weights')
     
     model = get_model(args.model_name, args.num_classes, args)
-    system = CoolSystem(model, args.dataset)
+    system = CoolSystem(args)
     
     model_parameters = filter(lambda p: p.requires_grad, system.model.parameters())
     params = sum([np.prod(p.size()) for p in model_parameters])
     
-    log_name = args.model_name + '_' + args.dataset + '_params=' + str(int(params))
-    checkpoint_callback = ModelCheckpoint(monitor='val_acc') if args.save_weights else False
+    log_name = args.model_name + '_' + args.dataset + '_' + args.weight_activation + '_params=' + str(int(params))
+    checkpoint_callback = [ModelCheckpoint(monitor='val_acc')] if args.save_weights else []
     logger = loggers.TensorBoardLogger("logs", name=log_name, version=1)
     
-    trainer = Trainer(default_root_dir='weights/', gpus=1, max_epochs=args.epochs, deterministic=True, gradient_clip_val=1, logger=logger, checkpoint_callback=args.save_weights)
+    trainer = Trainer(default_root_dir='weights/', gpus=1, max_epochs=args.epochs, deterministic=True, gradient_clip_val=1, logger=logger, callbacks=checkpoint_callback, precision=16)
     trainer.fit(system)

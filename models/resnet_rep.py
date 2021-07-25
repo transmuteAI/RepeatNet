@@ -41,22 +41,24 @@ class BasicBlock(nn.Module):
 
         return out
 
-class ResNetCifar(nn.Module):
+class ResNet(nn.Module):
     def __init__(self, block, layers, width=1, num_classes=10, args=None):
-        self.inplanes = 16
-        super(ResNetCifar, self).__init__()
+        self.inplanes = 64
+        super(ResNet, self).__init__()
         self.args = args
-        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1,
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1,
                                bias=False)
-        self.bn1 = nn.BatchNorm2d(16)
+        self.bn1 = nn.BatchNorm2d(64)
         self.relu = nn.ReLU(inplace=True)
+        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         block.width = width
         self.width = width
-        self.layer1 = self._make_layer(block, 16*width, layers[0], stride=1)
-        self.layer2 = self._make_layer(block, 32*width, layers[1], stride=2)
-        self.layer3 = self._make_layer(block, 64*width, layers[2], stride=2)
+        self.layer1 = self._make_layer(block, 64*width, layers[0], stride=1)
+        self.layer2 = self._make_layer(block, 128*width, layers[1], stride=2)
+        self.layer3 = self._make_layer(block, 256*width, layers[2], stride=2)
+        self.layer4 = self._make_layer(block, 512*width, layers[3], stride=2)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = nn.Linear(64*width, num_classes)
+        self.fc = nn.Linear(512*width, num_classes)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -82,7 +84,7 @@ class ResNetCifar(nn.Module):
         layers.append(block(self.inplanes, planes, stride, downsample, args=self.args))
         self.inplanes = planes
         for i in range(1, blocks):
-            layers.append(block(self.inplanes, planes, args = self.args))
+            layers.append(block(self.inplanes, planes, args=self.args))
 
         return nn.Sequential(*layers)
 
@@ -90,15 +92,17 @@ class ResNetCifar(nn.Module):
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
+        x = self.maxpool(x)
         x = self.layer1(x)
         x = self.layer2(x)
         x = self.layer3(x)
+        x = self.layer4(x)
         x = self.avgpool(x).squeeze()
         x = self.fc(x)
 
         return x
 
 def resnet_rep(num_classes=10, k=1, args=None):
-    model = ResNetCifar(BasicBlock, [2, 2, 2], width=k, num_classes=num_classes, args = args)
+    model = ResNet(BasicBlock, [2, 2, 2, 2], width=k, num_classes=num_classes, args=args)
     return model
 

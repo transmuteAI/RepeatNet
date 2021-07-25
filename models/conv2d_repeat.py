@@ -58,7 +58,6 @@ class Conv2dRepeat(nn.Module):
             self.drop_mask = torch.ones(self.roc, self.ric, self.rk1, self.rk2)*(1-self.args.drop_rate)
             self.drop_mask = torch.bernoulli(self.drop_mask)
             self.drop_mask = nn.Parameter(self.drop_mask, requires_grad=False)
-            self.drop_mask.requires_grad = False
         
         elif self.wactivation=='bireal':
             self.binary_activation = HardBinaryConv(self.roc, self.ric, self.rk1, self.rk2)
@@ -93,25 +92,21 @@ class Conv2dRepeat(nn.Module):
     
     def activation(self, weight, alphas=None, betas=None):
         if self.wactivation=="swish":
+            alphas = alphas.reshape(self.r0, self.r1,1,1).repeat(self.ooc, self.oic,1,1)
+            betas = betas.reshape(self.r0, self.r1,1,1).repeat(self.ooc, self.oic,1,1)
             x = weight*alphas/(1+torch.exp(weight*betas))
         elif self.wactivation=="static_drop":
             x = weight*(self.drop_mask.reshape_as(weight).detach())
         elif self.wactivation=='bireal':
             x = self.binary_activation(weight)
-        elif self.wactivation==None:
+        elif self.wactivation=='linear':
             x = weight
         return x
 
     def repeat(self, weights):
         if self.do_repeat:
-            weights = weights.unsqueeze(0).expand(self.r0, self.ooc, self.oic, self.ok1, self.ok2).contiguous().view(self.r0*self.ooc, self.oic, self.ok1, self.ok2).contiguous()
-            weights = weights.unsqueeze(1).expand(self.r0*self.ooc, self.r1, self.oic, self.ok1, self.ok2).contiguous().view(self.r0*self.ooc, self.r1*self.oic, self.ok1, self.ok2).contiguous()
-#             weights = weights.repeat((self.r0, self.r1,1,1)) <- Slow (https://github.com/pytorch/pytorch/issues/43192)
-            weights = weights.permute(2,3,0,1)
-            weights = self.unfold(weights)
-            weights = weights.reshape(-1,self.r1*self.r0)
+            weights = weights.unsqueeze(0).expand(self.r0, self.ooc, self.oic, self.ok1, self.ok2).reshape(self.r0*self.ooc, self.oic, self.ok1, self.ok2)
+            weights = weights.unsqueeze(1).expand(self.r0*self.ooc, self.r1, self.oic, self.ok1, self.ok2).reshape(self.r0*self.ooc, self.r1*self.oic, self.ok1, self.ok2)
+#             weights = weights.repeat((self.r0, self.r1,1,1)) #<- Slow (https://github.com/pytorch/pytorch/issues/43192)
             weights = self.activation(weights,self.alphas,self.betas)
-            weights = weights.reshape(self.ok1, -1, self.r1*self.r0)
-            weights = self.fold(weights)
-            weights = weights.permute(2,3,0,1)
         return weights

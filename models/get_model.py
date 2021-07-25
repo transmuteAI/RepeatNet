@@ -19,14 +19,14 @@ def get_model(model_name, num_classes, args=None):
         return CVGG11_10(num_classes)
     elif model_name[:3]=='VGG':
         return VGG(model_name, num_classes)
-    elif model_name=='resnet_16_1':
+    elif model_name=='resnet_18_1':
         return resnet_rep(num_classes, 1, args)
-    elif model_name=='resnet_16_4':
+    elif model_name=='resnet_18_2':
+        return resnet_rep(num_classes, 2, args)
+    elif model_name=='resnet_18_4':
         return resnet_rep(num_classes, 4, args)
-    elif model_name=='resnet_16_8':
+    elif model_name=='resnet_18_8':
         return resnet_rep(num_classes, 8, args)
-    elif model_name=='resnet_16_10':
-        return resnet_rep(num_classes, 10, args)
     elif model_name=='c16':
         return c16(num_classes)
     elif model_name=='c8':
