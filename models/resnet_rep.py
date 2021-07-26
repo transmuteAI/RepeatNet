@@ -40,6 +40,63 @@ class BasicBlock(nn.Module):
         out = self.relu(out)
 
         return out
+    
+class ResNetCifar(nn.Module):
+    def __init__(self, block, layers, width=1, num_classes=10, args=None):
+        self.inplanes = 16
+        super(ResNet, self).__init__()
+        self.args = args
+        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1,
+                               bias=False)
+        self.bn1 = nn.BatchNorm2d(16)
+        self.relu = nn.ReLU(inplace=True)
+        block.width = width
+        self.width = width
+        self.layer1 = self._make_layer(block, 16*width, layers[0], stride=1)
+        self.layer2 = self._make_layer(block, 32*width, layers[1], stride=2)
+        self.layer3 = self._make_layer(block, 64*width, layers[2], stride=2)
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        self.fc = nn.Linear(64*width, num_classes)
+
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0.01)
+
+    def _make_layer(self, block, planes, blocks, stride=1):
+        downsample = None
+        if stride != 1:
+            downsample = nn.Sequential(
+                Conv2dRepeat((planes//self.width, self.inplanes//self.width, 1, 1), (planes, self.inplanes, 1, 1), stride=stride, padding=0, args=self.args),
+                nn.BatchNorm2d(planes),
+            )
+        elif self.inplanes != planes:
+            downsample = nn.Sequential(
+                Conv2dRepeat((planes//self.width, self.inplanes, 1, 1), (planes, self.inplanes, 1, 1), stride=stride, padding=0, args=self.args),
+                nn.BatchNorm2d(planes),
+            )
+
+        layers = []
+        layers.append(block(self.inplanes, planes, stride, downsample, args=self.args))
+        self.inplanes = planes
+        for i in range(1, blocks):
+            layers.append(block(self.inplanes, planes, args=self.args))
+
+        return nn.Sequential(*layers)
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        x = self.avgpool(x).squeeze()
+        x = self.fc(x)
+
+        return x
 
 class ResNet(nn.Module):
     def __init__(self, block, layers, width=1, num_classes=10, args=None):
@@ -104,5 +161,9 @@ class ResNet(nn.Module):
 
 def resnet_rep(num_classes=10, k=1, args=None):
     model = ResNet(BasicBlock, [2, 2, 2, 2], width=k, num_classes=num_classes, args=args)
+    return model
+
+def resnetcifar_rep(num_classes=10, k=1, args=None):
+    model = ResNetCifar(BasicBlock, [2, 2, 2], width=k, num_classes=num_classes, args=args)
     return model
 

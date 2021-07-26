@@ -27,6 +27,14 @@ def get_model(model_name, num_classes, args=None):
         return resnet_rep(num_classes, 4, args)
     elif model_name=='resnet_18_8':
         return resnet_rep(num_classes, 8, args)
+    elif model_name=='resnet_16_1':
+        return resnetcifar_rep(num_classes, 1, args)
+    elif model_name=='resnet_16_2':
+        return resnetcifar_rep(num_classes, 2, args)
+    elif model_name=='resnet_16_4':
+        return resnetcifar_rep(num_classes, 4, args)
+    elif model_name=='resnet_16_8':
+        return resnetcifar_rep(num_classes, 8, args)
     elif model_name=='c16':
         return c16(num_classes)
     elif model_name=='c8':
