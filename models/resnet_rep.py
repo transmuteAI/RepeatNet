@@ -44,7 +44,7 @@ class BasicBlock(nn.Module):
 class ResNetCifar(nn.Module):
     def __init__(self, block, layers, width=1, num_classes=10, args=None):
         self.inplanes = 16
-        super(ResNet, self).__init__()
+        super(ResNetCifar, self).__init__()
         self.args = args
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1,
                                bias=False)
