@@ -94,9 +94,11 @@ class Conv2dRepeat(nn.Module):
     def activation(self, weight, alphas=None, betas=None):
         if self.wactivation=="swish":
             alphas = alphas.reshape(1,1,self.r0, self.r1)
-            alphas = torch.nn.functional.interpolate(alphas, None, (self.r0,self.r1), 'nearest')
+            alphas = torch.nn.functional.interpolate(alphas, None, (self.roc//self.r0,self.ric//self.r1), 'nearest')
+            alphas = alphas.reshape(self.roc, self.ric,1,1)
             betas = betas.reshape(1,1,self.r0, self.r1)
-            betas = torch.nn.functional.interpolate(betas, None, (self.r0,self.r1), 'nearest')
+            betas = torch.nn.functional.interpolate(betas, None, (self.roc//self.r0,self.ric//self.r1), 'nearest')
+            betas = betas.reshape(self.roc, self.ric,1,1)
             x = weight*alphas/(1+torch.exp(weight*betas))
         elif self.wactivation=="static_drop":
             x = weight*(self.drop_mask.reshape_as(weight).detach())
