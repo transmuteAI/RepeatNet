@@ -5,19 +5,19 @@ from .resnet import resnetcifar
 
 def get_model(model_name, num_classes, args=None):
     if model_name=='rep_vgg_4':
-        return CVGG11_4(num_classes)
+        return CVGG11_4(num_classes, args)
     elif model_name=='rep_vgg_5':
-        return CVGG11_5(num_classes)
+        return CVGG11_5(num_classes, args)
     elif model_name=='rep_vgg_6':
-        return CVGG11_6(num_classes)
+        return CVGG11_6(num_classes, args)
     elif model_name=='rep_vgg_7':
-        return CVGG11_7(num_classes)
+        return CVGG11_7(num_classes, args)
     elif model_name=='rep_vgg_8':
-        return CVGG11_8(num_classes)
+        return CVGG11_8(num_classes, args)
     elif model_name=='rep_vgg_9':
-        return CVGG11_9(num_classes)
+        return CVGG11_9(num_classes, args)
     elif model_name=='rep_vgg_10':
-        return CVGG11_10(num_classes)
+        return CVGG11_10(num_classes, args)
     elif model_name[:3]=='VGG':
         return VGG(model_name, num_classes)
     # elif model_name=='rresnet_18_1':
@@ -28,15 +28,15 @@ def get_model(model_name, num_classes, args=None):
     #     return resnet_rep(num_classes, 4, args)
     # elif model_name=='rresnet_18_8':
     #     return resnet_rep(num_classes, 8, args)
-    elif model_name=='rresnet_16_1':
-        return resnetcifar_rep(num_classes, 1, args)
-    elif model_name=='rresnet_16_2':
-        return resnetcifar_rep(num_classes, 2, args)
-    elif model_name=='rresnet_16_4':
-        return resnetcifar_rep(num_classes, 4, args)
-    elif model_name=='rresnet_16_8':
-        return resnetcifar_rep(num_classes, 8, args)
-    elif model_name[:12]=='resnet_cifar_16':
+    elif model_name=='rresnet_cifar_16_1':
+        return rresnetcifar(num_classes, 1, args)
+    elif model_name=='rresnet_cifar_16_2':
+        return rresnetcifar(num_classes, 2, args)
+    elif model_name=='rresnet_cifar_16_4':
+        return rresnetcifar(num_classes, 4, args)
+    elif model_name=='rresnet_cifar_16_8':
+        return rresnetcifar(num_classes, 8, args)
+    elif model_name[:15]=='resnet_cifar_16':
         return resnetcifar(model_name, num_classes, args)
     # elif model_name[:6]=='resnet':
     #     return resnet(model_name, num_classes, args)

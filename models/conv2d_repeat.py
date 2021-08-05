@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.functional import conv2d
+import math
 
 class HardBinaryConv(nn.Module):
     def __init__(self, roc, ric, rk1, rk2):
@@ -21,11 +22,11 @@ class Conv2dRepeat(nn.Module):
         self.args = args
         self.ooc, self.oic, self.ok1, self.ok2 = original_weight_shape
         self.roc, self.ric, self.rk1, self.rk2 = repeated_weight_shape
-        self.do_repeat = False if original_weight_shape==repeated_weight_shape else True
         self.stride = stride
         self.padding = padding
         self.conv_type = conv_type
         self.wactivation = self.args.weight_activation
+        self.do_repeat = False if (original_weight_shape==repeated_weight_shape or self.wactivation=='random_bireal') else True
         if previous_weight_shape is not None:
             if concat_dim==0:
                 self.ooc+=previous_weight_shape[0]
@@ -61,19 +62,19 @@ class Conv2dRepeat(nn.Module):
         
         elif self.wactivation=='bireal':
             self.binary_activation = HardBinaryConv(self.roc, self.ric, self.rk1, self.rk2)
+            
+        elif self.wactivation=='random_bireal':
+            self.binary_activation = HardBinaryConv(self.roc, self.ric, self.rk1, self.rk2)
+            self.random_weights = torch.empty(((self.roc*self.ric)-(self.ooc*self.oic), self.ok1, self.ok2))
+            nn.init.kaiming_uniform_(self.random_weights, a=math.sqrt(5))
+            self.random_weights = nn.Parameter(self.random_weights, requires_grad=False)
 
         if self.conv_type!="inter":
             self.weight = nn.Parameter(torch.zeros(original_weight_shape))
             torch.nn.init.xavier_uniform_(self.weight)
             
         if self.conv_type=='hybrid':
-            self.dim = concat_dim
-
-        
-        self.unfold = torch.nn.Unfold(kernel_size=(self.ooc, self.oic), stride=(self.ooc, self.oic))
-        self.fold = torch.nn.Fold(output_size=(self.ooc*self.r0, self.oic*self.r1), kernel_size=(self.ooc, self.oic), stride=(self.ooc, self.oic))
-
-        
+            self.dim = concat_dim  
     
     def forward(self, x, weights=None):
         if self.conv_type=="intra":
@@ -92,8 +93,10 @@ class Conv2dRepeat(nn.Module):
     
     def activation(self, weight, alphas=None, betas=None):
         if self.wactivation=="swish":
-            alphas = alphas.reshape(self.r0, self.r1,1,1).repeat(self.ooc, self.oic,1,1)
-            betas = betas.reshape(self.r0, self.r1,1,1).repeat(self.ooc, self.oic,1,1)
+            alphas = alphas.reshape(1,1,self.r0, self.r1)
+            alphas = torch.nn.functional.interpolate(alphas, None, (self.r0,self.r1), 'nearest')
+            betas = betas.reshape(1,1,self.r0, self.r1)
+            betas = torch.nn.functional.interpolate(betas, None, (self.r0,self.r1), 'nearest')
             x = weight*alphas/(1+torch.exp(weight*betas))
         elif self.wactivation=="static_drop":
             x = weight*(self.drop_mask.reshape_as(weight).detach())
@@ -101,6 +104,8 @@ class Conv2dRepeat(nn.Module):
             x = self.binary_activation(weight)
         elif self.wactivation=='linear':
             x = weight
+        elif self.wactivation=='random_bireal':
+            x = self.binary_activation(weight)
         return x
 
     def repeat(self, weights):
@@ -109,4 +114,9 @@ class Conv2dRepeat(nn.Module):
             weights = weights.unsqueeze(1).expand(self.r0*self.ooc, self.r1, self.oic, self.ok1, self.ok2).reshape(self.r0*self.ooc, self.r1*self.oic, self.ok1, self.ok2)
 #             weights = weights.repeat((self.r0, self.r1,1,1)) #<- Slow (https://github.com/pytorch/pytorch/issues/43192)
             weights = self.activation(weights,self.alphas,self.betas)
+        if self.wactivation=='random_bireal':
+            weights = weights.reshape(-1,self.ok1, self.ok2)
+            weights = torch.cat([weights, self.random_weights])
+            weights = self.activation(weights)
+        weights = weights.reshape(self.r0*self.ooc, self.r1*self.oic, self.ok1, self.ok2)
         return weights

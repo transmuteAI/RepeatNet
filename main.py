@@ -163,8 +163,10 @@ if __name__=='__main__':
     
     model_parameters = filter(lambda p: p.requires_grad, system.model.parameters())
     params = sum([np.prod(p.size()) for p in model_parameters])
-    
-    log_name = args.model_name + '_' + args.dataset + '_' + args.weight_activation + '_' + str(args.drop_rate)  + '_params=' + str(int(params))
+    if args.weight_activation == 'static_drop':
+        log_name = args.model_name + '_' + args.dataset + '_' + args.weight_activation + '_' + str(args.drop_rate)  + '_params=' + str(int(params))
+    else:
+        log_name = args.model_name + '_' + args.dataset + '_' + args.weight_activation + '_params=' + str(int(params))
     checkpoint_callback = [ModelCheckpoint(monitor='val_acc')] if args.save_weights else []
     logger = loggers.TensorBoardLogger("logs", name=log_name, version=1)
     

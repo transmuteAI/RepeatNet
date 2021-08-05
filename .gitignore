@@ -135,3 +135,5 @@ cifar-10-python.tar.gz
 cifar-10-batches-py/
 cifar-100-python/
 cifar-100-python.tar.gz
+tiny-imagenet-200/
+tiny-imagenet-200.zip

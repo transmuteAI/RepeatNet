@@ -51,18 +51,18 @@ class VGG(nn.Module):
         return nn.Sequential(*layers)
     
 class CVGG11_4(nn.Module):
-    def __init__(self, num_classes=10):
+    def __init__(self, num_classes=10, args=None):
         super(CVGG11_4, self).__init__()
         self.conv1_1 = nn.Conv2d(3, 64, kernel_size=3, padding=1)
         self.conv1_2 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
         self.conv2_1 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
-        self.conv2_2 = Conv2dRepeat((128,64,3,3), (128,128,3,3), stride = 1, padding = 1, conv_type="inter", weight_activation = "swish")
-        self.conv3_1 = Conv2dRepeat((128,64,3,3), (256,128,3,3), stride = 1, padding = 1, conv_type="inter", weight_activation = "swish")
-        self.conv3_2 = Conv2dRepeat((128,64,3,3), (256,256,3,3), stride = 1, padding = 1, conv_type="inter", weight_activation = "swish")
-        self.conv4_1 = Conv2dRepeat((128,64,3,3), (512,256,3,3), stride = 1, padding = 1, conv_type="inter", weight_activation = "swish")
-        self.conv4_2 = Conv2dRepeat((128,64,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", weight_activation = "swish")
-        self.conv5_1 = Conv2dRepeat((128,64,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", weight_activation = "swish")
-        self.conv5_2 = Conv2dRepeat((128,64,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", weight_activation = "swish")
+        self.conv2_2 = Conv2dRepeat((128,64,3,3), (128,128,3,3), stride = 1, padding = 1, conv_type="inter", args = args)
+        self.conv3_1 = Conv2dRepeat((128,64,3,3), (256,128,3,3), stride = 1, padding = 1, conv_type="inter", args = args)
+        self.conv3_2 = Conv2dRepeat((128,64,3,3), (256,256,3,3), stride = 1, padding = 1, conv_type="inter", args = args)
+        self.conv4_1 = Conv2dRepeat((128,64,3,3), (512,256,3,3), stride = 1, padding = 1, conv_type="inter", args = args)
+        self.conv4_2 = Conv2dRepeat((128,64,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", args = args)
+        self.conv5_1 = Conv2dRepeat((128,64,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", args = args)
+        self.conv5_2 = Conv2dRepeat((128,64,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", args = args)
         self.bn1 = nn.BatchNorm2d(64)
         self.bn2 = nn.BatchNorm2d(64)
         self.bn3 = nn.BatchNorm2d(128)
@@ -124,18 +124,18 @@ class CVGG11_4(nn.Module):
         return x
     
 class CVGG11_5(nn.Module):
-    def __init__(self, num_classes=10):
+    def __init__(self, num_classes=10, args=None):
         super(CVGG11_5, self).__init__()
         self.conv1_1 = nn.Conv2d(3, 64, kernel_size=3, padding=1)
         self.conv1_2 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
         self.conv2_1 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
         self.conv2_2 = nn.Conv2d(128, 128, kernel_size=3, padding=1)
-        self.conv3_1 = Conv2dRepeat((128,64,3,3), (256,128,3,3), stride = 1, padding = 1, conv_type="inter", weight_activation = "swish")
-        self.conv3_2 = Conv2dRepeat((128,128,3,3), (256,256,3,3), stride = 1, padding = 1, conv_type="inter", weight_activation = "swish")
-        self.conv4_1 = Conv2dRepeat((128,64,3,3), (512,256,3,3), stride = 1, padding = 1, conv_type="inter", weight_activation = "swish")
-        self.conv4_2 = Conv2dRepeat((128,128,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", weight_activation = "swish")
-        self.conv5_1 = Conv2dRepeat((128,64,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", weight_activation = "swish")
-        self.conv5_2 = Conv2dRepeat((128,128,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", weight_activation = "swish")
+        self.conv3_1 = Conv2dRepeat((128,64,3,3), (256,128,3,3), stride = 1, padding = 1, conv_type="inter", args = args)
+        self.conv3_2 = Conv2dRepeat((128,128,3,3), (256,256,3,3), stride = 1, padding = 1, conv_type="inter", args = args)
+        self.conv4_1 = Conv2dRepeat((128,64,3,3), (512,256,3,3), stride = 1, padding = 1, conv_type="inter", args = args)
+        self.conv4_2 = Conv2dRepeat((128,128,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", args = args)
+        self.conv5_1 = Conv2dRepeat((128,64,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", args = args)
+        self.conv5_2 = Conv2dRepeat((128,128,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", args = args)
         self.bn1 = nn.BatchNorm2d(64)
         self.bn2 = nn.BatchNorm2d(64)
         self.bn3 = nn.BatchNorm2d(128)
@@ -197,18 +197,18 @@ class CVGG11_5(nn.Module):
         return x
     
 class CVGG11_6(nn.Module):
-    def __init__(self, num_classes=10):
+    def __init__(self, num_classes=10, args=None):
         super(CVGG11_6, self).__init__()
         self.conv1_1 = nn.Conv2d(3, 64, kernel_size=3, padding=1)
         self.conv1_2 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
         self.conv2_1 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
         self.conv2_2 = nn.Conv2d(128, 128, kernel_size=3, padding=1)
         self.conv3_1 = nn.Conv2d(128, 256, kernel_size=3, padding=1)
-        self.conv3_2 = Conv2dRepeat((128,64,3,3), (256,256,3,3), stride = 1, padding = 1, conv_type="inter", weight_activation = "swish")
-        self.conv4_1 = Conv2dRepeat((128,128,3,3), (512,256,3,3), stride = 1, padding = 1, conv_type="inter", weight_activation = "swish")
-        self.conv4_2 = Conv2dRepeat((256,128,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", weight_activation = "swish")
-        self.conv5_1 = Conv2dRepeat((128,128,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", weight_activation = "swish")
-        self.conv5_2 = Conv2dRepeat((256,128,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", weight_activation = "swish")
+        self.conv3_2 = Conv2dRepeat((128,64,3,3), (256,256,3,3), stride = 1, padding = 1, conv_type="inter", args = args)
+        self.conv4_1 = Conv2dRepeat((128,128,3,3), (512,256,3,3), stride = 1, padding = 1, conv_type="inter", args = args)
+        self.conv4_2 = Conv2dRepeat((256,128,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", args = args)
+        self.conv5_1 = Conv2dRepeat((128,128,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", args = args)
+        self.conv5_2 = Conv2dRepeat((256,128,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", args = args)
         self.bn1 = nn.BatchNorm2d(64)
         self.bn2 = nn.BatchNorm2d(64)
         self.bn3 = nn.BatchNorm2d(128)
@@ -270,7 +270,7 @@ class CVGG11_6(nn.Module):
         return x
     
 class CVGG11_7(nn.Module):
-    def __init__(self, num_classes=10):
+    def __init__(self, num_classes=10, args=None):
         super(CVGG11_7, self).__init__()
         self.conv1_1 = nn.Conv2d(3, 64, kernel_size=3, padding=1)
         self.conv1_2 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
@@ -278,10 +278,10 @@ class CVGG11_7(nn.Module):
         self.conv2_2 = nn.Conv2d(128, 128, kernel_size=3, padding=1)
         self.conv3_1 = nn.Conv2d(128, 256, kernel_size=3, padding=1)
         self.conv3_2 = nn.Conv2d(256, 256, kernel_size=3, padding=1)
-        self.conv4_1 = Conv2dRepeat((128,64,3,3), (512,256,3,3), stride = 1, padding = 1, conv_type="inter", weight_activation = "swish")
-        self.conv4_2 = Conv2dRepeat((128,128,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", weight_activation = "swish")
-        self.conv5_1 = Conv2dRepeat((256,128,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", weight_activation = "swish")
-        self.conv5_2 = Conv2dRepeat((256,256,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", weight_activation = "swish")
+        self.conv4_1 = Conv2dRepeat((128,64,3,3), (512,256,3,3), stride = 1, padding = 1, conv_type="inter", args = args)
+        self.conv4_2 = Conv2dRepeat((128,128,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", args = args)
+        self.conv5_1 = Conv2dRepeat((256,128,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", args = args)
+        self.conv5_2 = Conv2dRepeat((256,256,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", args = args)
         self.bn1 = nn.BatchNorm2d(64)
         self.bn2 = nn.BatchNorm2d(64)
         self.bn3 = nn.BatchNorm2d(128)
@@ -343,7 +343,7 @@ class CVGG11_7(nn.Module):
         return x
     
 class CVGG11_8(nn.Module):
-    def __init__(self, num_classes=10):
+    def __init__(self, num_classes=10, args=None):
         super(CVGG11_8, self).__init__()
         self.conv1_1 = nn.Conv2d(3, 64, kernel_size=3, padding=1)
         self.conv1_2 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
@@ -352,9 +352,9 @@ class CVGG11_8(nn.Module):
         self.conv3_1 = nn.Conv2d(128, 256, kernel_size=3, padding=1)
         self.conv3_2 = nn.Conv2d(256, 256, kernel_size=3, padding=1)
         self.conv4_1 = nn.Conv2d(256, 512, kernel_size=3, padding=1)
-        self.conv4_2 = Conv2dRepeat((256,128,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", weight_activation = "swish")
-        self.conv5_1 = Conv2dRepeat((256,256,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", weight_activation = "swish")
-        self.conv5_2 = Conv2dRepeat((512,256,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", weight_activation = "swish")
+        self.conv4_2 = Conv2dRepeat((256,128,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", args = args)
+        self.conv5_1 = Conv2dRepeat((256,256,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", args = args)
+        self.conv5_2 = Conv2dRepeat((512,256,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", args = args)
         self.bn1 = nn.BatchNorm2d(64)
         self.bn2 = nn.BatchNorm2d(64)
         self.bn3 = nn.BatchNorm2d(128)
@@ -416,7 +416,7 @@ class CVGG11_8(nn.Module):
         return x
 
 class CVGG11_9(nn.Module):
-    def __init__(self, num_classes=10):
+    def __init__(self, num_classes=10, args=None):
         super(CVGG11_9, self).__init__()
         self.conv1_1 = nn.Conv2d(3, 64, kernel_size=3, padding=1)
         self.conv1_2 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
@@ -426,8 +426,8 @@ class CVGG11_9(nn.Module):
         self.conv3_2 = nn.Conv2d(256, 256, kernel_size=3, padding=1)
         self.conv4_1 = nn.Conv2d(256, 512, kernel_size=3, padding=1)
         self.conv4_2 = nn.Conv2d(512, 512, kernel_size=3, padding=1)
-        self.conv5_1 = Conv2dRepeat((512,256,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", weight_activation = "swish")
-        self.conv5_2 = Conv2dRepeat((512,512,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", weight_activation = "swish")
+        self.conv5_1 = Conv2dRepeat((512,256,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", args = args)
+        self.conv5_2 = Conv2dRepeat((512,512,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", args = args)
         self.bn1 = nn.BatchNorm2d(64)
         self.bn2 = nn.BatchNorm2d(64)
         self.bn3 = nn.BatchNorm2d(128)
@@ -489,7 +489,7 @@ class CVGG11_9(nn.Module):
         return x
     
 class CVGG11_10(nn.Module):
-    def __init__(self, num_classes=10):
+    def __init__(self, num_classes=10, args=None):
         super(CVGG11_10, self).__init__()
         self.conv1_1 = nn.Conv2d(3, 64, kernel_size=3, padding=1)
         self.conv1_2 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
@@ -500,7 +500,7 @@ class CVGG11_10(nn.Module):
         self.conv4_1 = nn.Conv2d(256, 512, kernel_size=3, padding=1)
         self.conv4_2 = nn.Conv2d(512, 512, kernel_size=3, padding=1)
         self.conv5_1 = nn.Conv2d(512, 512, kernel_size=3, padding=1)
-        self.conv5_2 = Conv2dRepeat((512,512,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", weight_activation = "swish")
+        self.conv5_2 = Conv2dRepeat((512,512,3,3), (512,512,3,3), stride = 1, padding = 1, conv_type="inter", args = args)
         self.bn1 = nn.BatchNorm2d(64)
         self.bn2 = nn.BatchNorm2d(64)
         self.bn3 = nn.BatchNorm2d(128)

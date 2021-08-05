@@ -52,7 +52,7 @@ class ResNetCifar(nn.Module):
         self.relu = nn.ReLU(inplace=True)
         block.width = width
         self.width = width
-        self.layer1 = self._make_layer(block, 16*width, layers[0], stride=1)
+        self.layer1 = self._make_layer(block, 16*width, layers[0])
         self.layer2 = self._make_layer(block, 32*width, layers[1], stride=2)
         self.layer3 = self._make_layer(block, 64*width, layers[2], stride=2)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))

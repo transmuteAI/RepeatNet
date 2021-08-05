@@ -51,7 +51,6 @@ class ResNetCifar(nn.Module):
         self.layer3 = self._make_layer(block, 64 * width, layers[2], stride=2)
         self.avgpool = nn.AdaptiveAvgPool2d(output_size=1)
         self.fc = nn.Linear(64 * width, num_classes)
-        self.init_weights()
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
