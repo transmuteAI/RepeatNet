@@ -1,6 +1,6 @@
 from .vgg_rep import *
-from .resnet_rep import rresnetcifar
-from .resnet import resnetcifar
+from .resnet_rep import rresnetcifar, rresnet
+from .resnet import resnetcifar, resnet
 # from .group_equivariant import *
 
 def get_model(model_name, num_classes, args=None):
@@ -20,14 +20,6 @@ def get_model(model_name, num_classes, args=None):
         return CVGG11_10(num_classes, args)
     elif model_name[:3]=='VGG':
         return VGG(model_name, num_classes)
-    # elif model_name=='rresnet_18_1':
-    #     return resnet_rep(num_classes, 1, args)
-    # elif model_name=='rresnet_18_2':
-    #     return resnet_rep(num_classes, 2, args)
-    # elif model_name=='rresnet_18_4':
-    #     return resnet_rep(num_classes, 4, args)
-    # elif model_name=='rresnet_18_8':
-    #     return resnet_rep(num_classes, 8, args)
     elif model_name=='rresnet_cifar_16_1':
         return rresnetcifar(num_classes, 1, args)
     elif model_name=='rresnet_cifar_16_2':
@@ -38,9 +30,16 @@ def get_model(model_name, num_classes, args=None):
         return rresnetcifar(num_classes, 8, args)
     elif model_name[:15]=='resnet_cifar_16':
         return resnetcifar(model_name, num_classes, args)
-    # elif model_name[:6]=='resnet':
-    #     return resnet(model_name, num_classes, args)
-
+    elif model_name=='rresnet_18_1':
+        return rresnet(num_classes, 1, args)
+    elif model_name=='rresnet_18_2':
+        return rresnet(num_classes, 2, args)
+    elif model_name=='rresnet_18_4':
+        return rresnet(num_classes, 4, args)
+    elif model_name=='rresnet_18_8':
+        return rresnet(num_classes, 8, args)
+    elif model_name[:9]=='resnet_18':
+        return resnet(model_name, num_classes, args)
     elif model_name=='c16':
         return c16(num_classes)
     elif model_name=='c8':

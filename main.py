@@ -60,13 +60,18 @@ class CoolSystem(pl.LightningModule):
         elif self.dataset == 'TINYIMNET':
             optimizer = optim.SGD(self.model.parameters(), 0.1,
                                     momentum=0.9,
-                                    weight_decay=5e-4)
-            scheduler = optim.lr_scheduler.MultiStepLR(optimizer,  milestones=[30,45], gamma=0.1, verbose=True)
+                                    weight_decay=1e-4)
+            scheduler = optim.lr_scheduler.MultiStepLR(optimizer,  milestones=[30,60], gamma=0.1, verbose=True)
+        elif self.dataset == 'IMNET':
+            optimizer = optim.SGD(self.model.parameters(), 0.1,
+                                    momentum=0.9,
+                                    weight_decay=1e-4)
+            scheduler = optim.lr_scheduler.MultiStepLR(optimizer,  milestones=[30,60], gamma=0.1, verbose=True)
         else:
             optimizer = optim.SGD(self.model.parameters(), 0.1,
                                     momentum=0.9,
-                                    weight_decay=5e-4)
-            scheduler = optim.lr_scheduler.MultiStepLR(optimizer,  milestones=[60,90], gamma=0.1, verbose=True)
+                                    weight_decay=1e-3)
+            scheduler = optim.lr_scheduler.MultiStepLR(optimizer,  milestones=[80,120], gamma=0.1, verbose=True)
         lr_scheduler = {
             'scheduler': scheduler,
             'name': 'lr'
@@ -108,6 +113,19 @@ class CoolSystem(pl.LightningModule):
                 norm_transform,
             ])
             dataset = TinyImageNet(os.getcwd(), train=True, transform=train_transform)
+        elif self.dataset == 'IMNET':
+            norm_mean = [0.485, 0.456, 0.406]
+            norm_std = [0.229, 0.224, 0.225]
+            norm_transform = transforms.Normalize(norm_mean, norm_std)
+            traindir = os.path.join(self.args.datapath, 'train')
+            train_transform = transforms.Compose([
+                transforms.RandomAffine(degrees=20.0, scale=(0.8, 1.2), shear=20.0),
+                transforms.RandomResizedCrop(224),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                norm_transform,
+            ])
+            train_dataset = datasets.ImageFolder(traindir, transform=train_transform)
         dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=8, shuffle=True, drop_last=True, pin_memory=True)
         return dataloader
     
@@ -135,6 +153,16 @@ class CoolSystem(pl.LightningModule):
                 norm_transform
             ])
             dataset = TinyImageNet(os.getcwd(), train=False, transform=transform_val)
+        elif self.dataset == 'IMNET':
+            norm_mean = [0.485, 0.456, 0.406]
+            norm_std = [0.229, 0.224, 0.225]
+            norm_transform = transforms.Normalize(norm_mean, norm_std)
+            valdir = os.path.join(self.args.datapath, 'val')
+            transform_val = transforms.Compose([
+                transforms.ToTensor(),
+                norm_transform,
+            ])
+            train_dataset = datasets.ImageFolder(valdir, transform=transform_val)
         dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=8, pin_memory=True)
         return dataloader
 
@@ -147,6 +175,8 @@ def parse_args():
     parser.add_argument("--epochs", type=int, default=200)
     parser.add_argument("--weight_activation", type=str, default='linear')
     parser.add_argument("--drop_rate", type=float, default=0.5)
+    parser.add_argument("--datapath", type=str, default=None)
+    parser.add_argument("--gpus", type=int, default=1)
     return parser.parse_args()
 
 if __name__=='__main__':
@@ -170,5 +200,5 @@ if __name__=='__main__':
     checkpoint_callback = [ModelCheckpoint(monitor='val_acc')] if args.save_weights else []
     logger = loggers.TensorBoardLogger("logs", name=log_name, version=1)
     
-    trainer = Trainer(default_root_dir='weights/', gpus=1, max_epochs=args.epochs, deterministic=True, gradient_clip_val=1, logger=logger, callbacks=checkpoint_callback, precision=16)
+    trainer = Trainer(default_root_dir='weights/', gpus=1, max_epochs=args.epochs, deterministic=True, gradient_clip_val=1, logger=logger, callbacks=checkpoint_callback, precision=16, gpus=args.gpus, accelerator="ddp" if args.gpus>1 else None)
     trainer.fit(system)
