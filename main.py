@@ -200,5 +200,5 @@ if __name__=='__main__':
     checkpoint_callback = [ModelCheckpoint(monitor='val_acc')] if args.save_weights else []
     logger = loggers.TensorBoardLogger("logs", name=log_name, version=1)
     
-    trainer = Trainer(default_root_dir='weights/', gpus=1, max_epochs=args.epochs, deterministic=True, gradient_clip_val=1, logger=logger, callbacks=checkpoint_callback, precision=16, gpus=args.gpus, accelerator="ddp" if args.gpus>1 else None)
+    trainer = Trainer(default_root_dir='weights/', max_epochs=args.epochs, deterministic=True, gradient_clip_val=1, logger=logger, callbacks=checkpoint_callback, precision=16, gpus=args.gpus, accelerator="ddp" if args.gpus>1 else None)
     trainer.fit(system)
