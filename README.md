@@ -17,5 +17,3 @@ The main script offers many options; here are the most important ones:
 ```
 usage: python main.py --model_name {model name} --dataset {dataset: CIFAR10, CIFAR100, rot-MNIST} --num_classes {num_classes} --epochs {number of epochs to train}
 ```
-
-**This work is under review at ICIP 2021**
