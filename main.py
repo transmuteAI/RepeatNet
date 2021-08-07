@@ -197,7 +197,7 @@ if __name__=='__main__':
         log_name = args.model_name + '_' + args.dataset + '_' + args.weight_activation + '_' + str(args.drop_rate)  + '_params=' + str(int(params))
     else:
         log_name = args.model_name + '_' + args.dataset + '_' + args.weight_activation + '_params=' + str(int(params))
-    checkpoint_callback = [ModelCheckpoint(monitor='val_acc')] if args.save_weights else []
+    checkpoint_callback = [ModelCheckpoint(monitor='val_acc', mode='max')] if args.save_weights else []
     logger = loggers.TensorBoardLogger("logs", name=log_name, version=1)
     
     trainer = Trainer(default_root_dir='weights/', max_epochs=args.epochs, deterministic=True, gradient_clip_val=1, logger=logger, callbacks=checkpoint_callback, precision=16, gpus=args.gpus, accelerator="ddp" if args.gpus>1 else None)
