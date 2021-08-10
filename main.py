@@ -125,8 +125,8 @@ class CoolSystem(pl.LightningModule):
                 transforms.ToTensor(),
                 norm_transform,
             ])
-            train_dataset = datasets.ImageFolder(traindir, transform=train_transform)
-        dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=8, shuffle=True, drop_last=True, pin_memory=True)
+            dataset = datasets.ImageFolder(traindir, transform=train_transform)
+        dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=10, shuffle=True, drop_last=True, pin_memory=True)
         return dataloader
     
     def val_dataloader(self):
@@ -159,11 +159,13 @@ class CoolSystem(pl.LightningModule):
             norm_transform = transforms.Normalize(norm_mean, norm_std)
             valdir = os.path.join(self.args.datapath, 'val')
             transform_val = transforms.Compose([
+                transforms.Resize(256),
+                transforms.CenterCrop(224),
                 transforms.ToTensor(),
                 norm_transform,
             ])
-            train_dataset = datasets.ImageFolder(valdir, transform=transform_val)
-        dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=8, pin_memory=True)
+            dataset = datasets.ImageFolder(valdir, transform=transform_val)
+        dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=10, pin_memory=True)
         return dataloader
 
 def parse_args():
