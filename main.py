@@ -5,6 +5,7 @@ from torchvision import transforms
 from torch import nn, optim
 from torch.utils.data import DataLoader
 import os
+from collections import OrderedDict
 from PIL import Image
 import argparse
 from models.get_model import get_model
@@ -25,6 +26,16 @@ class CoolSystem(pl.LightningModule):
         self.batch_size = batch_size
         self.dataset = args.dataset
         self.model = get_model(args.model_name, args.num_classes, args)
+        if self.args.weight_path:
+            weights = torch.load(self.args.weights_path)['state_dict']
+            weights = OrderedDict([(k[6:], v) for k, v in weights.items() if ('bn' not in k and 'downsample' not in k and 'fc' not in k )]) #[6:] to remove 'model.' in front of keys   
+            self.model.load_state_dict(weights, False)
+        if self.args.freeze_weights:
+            for k, params in self.model.named_parameters():
+                if 'bn' not in k and 'downsample' not in k and 'fc' not in k and 'binary_activation' not in k:
+                    params.requires_grad = False
+                else:
+                    params.requires_grad = True
             
     def forward(self, x):
         return self.model(x)
@@ -67,6 +78,11 @@ class CoolSystem(pl.LightningModule):
                                     momentum=0.9,
                                     weight_decay=1e-4)
             scheduler = optim.lr_scheduler.MultiStepLR(optimizer,  milestones=[30,60], gamma=0.1, verbose=True)
+        elif self.args.freeze_weights:
+            optimizer = optim.SGD(self.model.parameters(), 0.1,
+                                    momentum=0.9,
+                                    weight_decay=1e-4)
+            scheduler = optim.lr_scheduler.MultiStepLR(optimizer,  milestones=[6,12], gamma=0.1, verbose=True)
         else:
             optimizer = optim.SGD(self.model.parameters(), 0.1,
                                     momentum=0.9,
@@ -174,8 +190,10 @@ def parse_args():
     parser.add_argument("--dataset", type=str, default="CIFAR10")
     parser.add_argument("--num_classes", type=int, default="10")
     parser.add_argument("--save_weights", action='store_true')
+    parser.add_argument("--freeze_weights", action='store_true')
     parser.add_argument("--epochs", type=int, default=200)
     parser.add_argument("--weight_activation", type=str, default='linear')
+    parser.add_argument("--weight_path", type=str, default=None')
     parser.add_argument("--drop_rate", type=float, default=0.5)
     parser.add_argument("--datapath", type=str, default=None)
     parser.add_argument("--gpus", type=int, default=1)
