@@ -26,16 +26,16 @@ class CoolSystem(pl.LightningModule):
         self.batch_size = batch_size
         self.dataset = args.dataset
         self.model = get_model(args.model_name, args.num_classes, args)
-        if self.args.weight_path:
+        if self.args.weights_path:
             weights = torch.load(self.args.weights_path)['state_dict']
             weights = OrderedDict([(k[6:], v) for k, v in weights.items() if ('bn' not in k and 'downsample' not in k and 'fc' not in k )]) #[6:] to remove 'model.' in front of keys   
             self.model.load_state_dict(weights, False)
         if self.args.freeze_weights:
             for k, params in self.model.named_parameters():
-                if 'bn' not in k and 'downsample' not in k and 'fc' not in k and 'binary_activation' not in k:
-                    params.requires_grad = False
-                else:
+                if 'bn' in k or 'downsample' in k or 'fc' in k or 'binary_activation' in k:
                     params.requires_grad = True
+                else:
+                    params.requires_grad = False
             
     def forward(self, x):
         return self.model(x)
@@ -193,7 +193,7 @@ def parse_args():
     parser.add_argument("--freeze_weights", action='store_true')
     parser.add_argument("--epochs", type=int, default=200)
     parser.add_argument("--weight_activation", type=str, default='linear')
-    parser.add_argument("--weight_path", type=str, default=None')
+    parser.add_argument("--weights_path", type=str, default=None)
     parser.add_argument("--drop_rate", type=float, default=0.5)
     parser.add_argument("--datapath", type=str, default=None)
     parser.add_argument("--gpus", type=int, default=1)
@@ -208,7 +208,6 @@ if __name__=='__main__':
     if not os.path.exists('weights'):
         os.mkdir('weights')
     
-    model = get_model(args.model_name, args.num_classes, args)
     system = CoolSystem(args)
     
     model_parameters = filter(lambda p: p.requires_grad, system.model.parameters())
