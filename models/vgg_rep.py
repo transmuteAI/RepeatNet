@@ -75,7 +75,7 @@ class CVGG11_4(nn.Module):
         self.bn10 = nn.BatchNorm2d(512)
         self.fc = nn.Linear(512, num_classes)
         self.maxpool = nn.MaxPool2d(kernel_size=2, stride=2)
-        self.avgpool = nn.AvgPool2d(kernel_size=1, stride=1)
+        self.avgpool = nn.AdaptiveAvgPool2d(1)
 
     def forward(self, x):
         x = self.conv1_1(x)
@@ -101,7 +101,7 @@ class CVGG11_4(nn.Module):
         x = self.bn6(x)
         x = F.relu(x)
         x = self.maxpool(x)
-        
+
         x = self.conv4_1(x, self.conv2_1.weight)
         x = self.bn7(x)
         x = F.relu(x)
@@ -148,7 +148,7 @@ class CVGG11_5(nn.Module):
         self.bn10 = nn.BatchNorm2d(512)
         self.fc = nn.Linear(512, num_classes)
         self.maxpool = nn.MaxPool2d(kernel_size=2, stride=2)
-        self.avgpool = nn.AvgPool2d(kernel_size=1, stride=1)
+        self.avgpool = nn.AdaptiveAvgPool2d(1)
 
     def forward(self, x):
         x = self.conv1_1(x)
@@ -221,7 +221,7 @@ class CVGG11_6(nn.Module):
         self.bn10 = nn.BatchNorm2d(512)
         self.fc = nn.Linear(512, num_classes)
         self.maxpool = nn.MaxPool2d(kernel_size=2, stride=2)
-        self.avgpool = nn.AvgPool2d(kernel_size=1, stride=1)
+        self.avgpool = nn.AdaptiveAvgPool2d(1)
 
     def forward(self, x):
         x = self.conv1_1(x)
@@ -294,7 +294,7 @@ class CVGG11_7(nn.Module):
         self.bn10 = nn.BatchNorm2d(512)
         self.fc = nn.Linear(512, num_classes)
         self.maxpool = nn.MaxPool2d(kernel_size=2, stride=2)
-        self.avgpool = nn.AvgPool2d(kernel_size=1, stride=1)
+        self.avgpool = nn.AdaptiveAvgPool2d(1)
 
     def forward(self, x):
         x = self.conv1_1(x)
@@ -367,7 +367,7 @@ class CVGG11_8(nn.Module):
         self.bn10 = nn.BatchNorm2d(512)
         self.fc = nn.Linear(512, num_classes)
         self.maxpool = nn.MaxPool2d(kernel_size=2, stride=2)
-        self.avgpool = nn.AvgPool2d(kernel_size=1, stride=1)
+        self.avgpool = nn.AdaptiveAvgPool2d(1)
 
     def forward(self, x):
         x = self.conv1_1(x)
@@ -440,7 +440,7 @@ class CVGG11_9(nn.Module):
         self.bn10 = nn.BatchNorm2d(512)
         self.fc = nn.Linear(512, num_classes)
         self.maxpool = nn.MaxPool2d(kernel_size=2, stride=2)
-        self.avgpool = nn.AvgPool2d(kernel_size=1, stride=1)
+        self.avgpool = nn.AdaptiveAvgPool2d(1)
 
     def forward(self, x):
         x = self.conv1_1(x)
@@ -513,7 +513,7 @@ class CVGG11_10(nn.Module):
         self.bn10 = nn.BatchNorm2d(512)
         self.fc = nn.Linear(512, num_classes)
         self.maxpool = nn.MaxPool2d(kernel_size=2, stride=2)
-        self.avgpool = nn.AvgPool2d(kernel_size=1, stride=1)
+        self.avgpool = nn.AdaptiveAvgPool2d(1)
 
     def forward(self, x):
         x = self.conv1_1(x)
