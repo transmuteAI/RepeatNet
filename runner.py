@@ -6,8 +6,8 @@ import argparse
 import random
 
 # adapt these to you setup
-NR_GPUS = 2
-NR_PROCESSES = 2
+NR_GPUS = 4
+NR_PROCESSES = 4
 
 cnt = -1
 
@@ -23,7 +23,7 @@ def call_script(scripts):
     gpu = cnt % NR_GPUS
     crt_env['CUDA_VISIBLE_DEVICES'] = str(gpu)
     print(scripts)
-    sp.call([sys.executable, 'main.py', '--model_name', str(model), '--dataset', str(dataset), '--num_classes', str(num_classes), '--epochs', str(epochs), '--save_weights', '--weight_activation', wa], env=crt_env)
+    sp.call([sys.executable, 'main.py', '--model_name', str(model), '--dataset', str(dataset), '--num_classes', str(num_classes), '--epochs', str(epochs), '--weight_activation', wa], env=crt_env)
 
 
 if __name__ == '__main__':
