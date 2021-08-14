@@ -65,7 +65,7 @@ class CoolSystem(pl.LightningModule):
     def configure_optimizers(self):
         if self.dataset == 'MNIST-rot':
             lambda1 = lambda epoch: (0.8 ** (epoch-9) if epoch>=10 else 1)
-            optimizer = optim.Adam(model.parameters(), lr=0.001, 
+            optimizer = optim.Adam(self.model.parameters(), lr=0.001, 
                                          weight_decay=1e-7)
             scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=[lambda1], last_epoch=-1, verbose=True)
         elif self.dataset == 'TINYIMNET':
