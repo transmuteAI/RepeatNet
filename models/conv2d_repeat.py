@@ -61,7 +61,11 @@ class Conv2dRepeat(nn.Module):
             self.drop_mask = nn.Parameter(self.drop_mask, requires_grad=False)
         
         elif self.wactivation=='bireal':
-            self.binary_activation = HardBinaryConv(self.roc, self.ric, self.rk1, self.rk2)
+            self.binary_activation = HardBinaryConv(self.ooc*self.r0, self.oic*self.r1, self.rk1, self.rk2)
+            if self.e0!=0:
+                self.binary_activation0 = HardBinaryConv(self.e0, self.oic*self.r1, self.rk1, self.rk2)
+            if self.e1!=0:
+                self.binary_activation1 = HardBinaryConv(self.ooc*self.r0 + self.e0, self.e1, self.rk1, self.rk2)
             
         elif self.wactivation=='random_bireal':
             self.binary_activation = HardBinaryConv(self.roc, self.ric, self.rk1, self.rk2)
@@ -85,13 +89,19 @@ class Conv2dRepeat(nn.Module):
             weights = torch.cat((self.weight, weights), dim = self.dim)
             weights = self.repeat(weights)
         if self.e0!=0:
-            weights = torch.cat((weights, self.activation(weights[:self.e0,...], self.ealpha1, self.ebeta1)), dim=0)
+            if self.wactivation=='swish':
+                weights = torch.cat((weights, self.activation(weights[:self.e0,...], self.ealpha1, self.ebeta1)), dim=0)
+            elif self.wactivation=='bireal':
+                weights = torch.cat((weights, self.activation(weights[:self.e0,...], e=0)), dim=0)
         if self.e1!=0:
-            weights = torch.cat((weights, self.activation(weights[:,:self.e1,...], self.ealpha2, self.ebeta2)), dim=1)
+            if self.wactivation=='swish':
+                weights = torch.cat((weights, self.activation(weights[:,:self.e1,...], self.ealpha2, self.ebeta2)), dim=1)
+            elif self.wactivation=='bireal':
+                weights = torch.cat((weights, self.activation(weights[:,:self.e1,...], e=1)), dim=1)
         x = F.conv2d(x, weights, self.bias, stride=self.stride, padding = self.padding)
         return x
     
-    def activation(self, weight, alphas=None, betas=None):
+    def activation(self, weight, alphas=None, betas=None, e=-1):
         if self.wactivation=="swish":
             alphas = alphas.reshape(1,1,self.r0, self.r1)
             alphas = torch.nn.functional.interpolate(alphas, None, (self.roc//self.r0,self.ric//self.r1), 'nearest')
@@ -103,7 +113,12 @@ class Conv2dRepeat(nn.Module):
         elif self.wactivation=="static_drop":
             x = weight*(self.drop_mask.reshape_as(weight).detach())
         elif self.wactivation=='bireal':
-            x = self.binary_activation(weight)
+            if e==-1:
+                x = self.binary_activation(weight)
+            elif e==0:
+                x = self.binary_activation0(weight)
+            else:
+                x = self.binary_activation1(weight)
         elif self.wactivation=='linear':
             x = weight
         elif self.wactivation=='random_bireal':
