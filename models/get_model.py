@@ -1,7 +1,7 @@
 from .vgg_rep import *
 from .resnet_rep import rresnetcifar, rresnet
 from .resnet import resnetcifar, resnet
-# from .group_equivariant import *
+from .group_equivariant import *
 
 def get_model(model_name, num_classes, args=None):
     if model_name=='rep_vgg_4':
@@ -49,8 +49,8 @@ def get_model(model_name, num_classes, args=None):
     elif model_name=='baseline':
         return baseline(num_classes)
     elif model_name=='c16_rep':
-        return c16_rep(num_classes)
+        return c16_rep(num_classes, args)
     elif model_name=='c8_rep':
-        return c8_rep(num_classes)
+        return c8_rep(num_classes, args)
     elif model_name=='c4_rep':
-        return c4_rep(num_classes)
+        return c4_rep(num_classes, args)
