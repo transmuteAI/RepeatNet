@@ -30,8 +30,7 @@ class VGG(nn.Module):
 
     def forward(self, x):
         out = self.features(x)
-        if self.vgg_name in ['VGG4','VGG5','VGG6','VGG7','VGG8','VGG9']:
-            out = self.avg_pool(out)
+        out = self.avg_pool(out)
         out = out.view(out.size(0), -1)
         out = self.classifier(out)
         return out
